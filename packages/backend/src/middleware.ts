@@ -14,12 +14,18 @@ export const authMiddleware = createMiddleware<{ Bindings: Bindings; Variables: 
             return c.json({ error: 'Unauthorized' }, 401)
         }
 
+        if (!c.env.JWT_SECRET) {
+            console.error('SERVER ERROR: JWT_SECRET is not set in middleware')
+            return c.json({ error: 'Server configuration error' }, 500)
+        }
+
         try {
             const payload = await verify(token, c.env.JWT_SECRET)
             c.set('user', payload as unknown as Variables['user']) // Type assertion
             await next()
         } catch (e) {
-            return c.json({ error: 'Unauthorized' }, 401)
+            console.error('Token verification failed:', e)
+            return c.json({ error: 'Unauthorized: Invalid token' }, 401)
         }
     }
 )
