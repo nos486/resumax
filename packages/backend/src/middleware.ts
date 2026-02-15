@@ -23,9 +23,13 @@ export const authMiddleware = createMiddleware<{ Bindings: Bindings; Variables: 
             const payload = await verify(token, c.env.JWT_SECRET)
             c.set('user', payload as unknown as Variables['user']) // Type assertion
             await next()
-        } catch (e) {
+        } catch (e: any) {
             console.error('Token verification failed:', e)
-            return c.json({ error: 'Unauthorized: Invalid token' }, 401)
+            return c.json({
+                error: 'Unauthorized',
+                details: e.message,
+                name: e.name
+            }, 401)
         }
     }
 )

@@ -11,7 +11,9 @@ export async function request(endpoint, options = {}) {
 
     if (token) {
         headers['Authorization'] = `Bearer ${token}`
+        console.log('Sending Token:', token.substring(0, 10) + '...')
     }
+
 
     const response = await fetch(`${API_URL}${endpoint}`, {
         ...options,
