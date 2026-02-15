@@ -21,4 +21,11 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  background-color: #111827;
+  /* bg-gray-900 equivalent */
+}
+
+#app {
+  width: 100%;
+  min-height: 100vh;
 }
