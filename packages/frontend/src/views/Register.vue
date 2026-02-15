@@ -1,24 +1,21 @@
-<script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '../lib/api'
+import { toast } from '../lib/toast'
 
 const email = ref('')
 const password = ref('')
-const error = ref('')
 const loading = ref(false)
 const router = useRouter()
 
 async function handleRegister() {
   loading.value = true
-  error.value = ''
   try {
     await api.register(email.value, password.value)
-    // Auto login after register or redirect to login?
-    // Let's redirect to login for simplicity
+    toast.success('Account created! Please login.')
     router.push('/login')
   } catch (e) {
-    error.value = e.message
+    toast.error(e.message)
   } finally {
     loading.value = false
   }

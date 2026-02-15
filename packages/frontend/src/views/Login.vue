@@ -1,24 +1,23 @@
-<script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '../lib/api'
+import { toast } from '../lib/toast'
 
 const email = ref('')
 const password = ref('')
-const error = ref('')
 const loading = ref(false)
 const router = useRouter()
 
 async function handleLogin() {
   loading.value = true
-  error.value = ''
   try {
     const data = await api.login(email.value, password.value)
     localStorage.setItem('token', data.token)
     localStorage.setItem('user', JSON.stringify(data.user))
+    toast.success('Welcome back!')
     router.push('/dashboard')
   } catch (e) {
-    error.value = e.message
+    toast.error(e.message)
   } finally {
     loading.value = false
   }

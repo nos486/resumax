@@ -7,9 +7,9 @@ import PublicView from '../views/PublicView.vue'
 
 const routes = [
     { path: '/', component: Home },
-    { path: '/login', component: Login },
-    { path: '/register', component: Register },
-    { path: '/dashboard', component: Dashboard },
+    { path: '/login', component: Login, meta: { guestOnly: true } },
+    { path: '/register', component: Register, meta: { guestOnly: true } },
+    { path: '/dashboard', component: Dashboard, meta: { requiresAuth: true } },
     { path: '/v/:slug', component: PublicView },
 ]
 
@@ -17,5 +17,18 @@ const router = createRouter({
     history: createWebHistory(),
     routes,
 })
+
+router.beforeEach((to, from, next) => {
+    const token = localStorage.getItem('token')
+
+    if (to.meta.requiresAuth && !token) {
+        next('/login')
+    } else if (to.meta.guestOnly && token) {
+        next('/dashboard')
+    } else {
+        next()
+    }
+})
+
 
 export default router

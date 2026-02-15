@@ -1,10 +1,9 @@
-<script setup>
 import { ref, onMounted, reactive } from 'vue'
 import { api } from '../lib/api'
+import { toast } from '../lib/toast'
 
 const loading = ref(true)
 const saving = ref(false)
-const message = ref('')
 const resume = reactive({
   slug: '',
   theme: 'modern',
@@ -36,17 +35,15 @@ onMounted(async () => {
 
 async function saveResume() {
   saving.value = true
-  message.value = ''
   try {
     await api.updateResume({
       slug: resume.slug,
       theme: resume.theme,
       content: resume.content
     })
-    message.value = 'Resume saved successfully!'
-    setTimeout(() => message.value = '', 3000)
+    toast.success('Resume saved successfully!')
   } catch (e) {
-    message.value = 'Error saving: ' + e.message
+    toast.error('Error saving: ' + e.message)
   } finally {
     saving.value = false
   }
@@ -98,9 +95,7 @@ function removeSkill(index) {
 
     <div v-else class="container mx-auto p-8 max-w-4xl space-y-8 pb-20">
       
-      <div v-if="message" class="fixed bottom-8 right-8 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg animate-bounce">
-        {{ message }}
-      </div>
+
 
       <!-- Settings -->
       <section class="bg-gray-800 rounded-xl p-6 border border-gray-700 shadow-md">
