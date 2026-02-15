@@ -1,8 +1,11 @@
 import { ref, onMounted, reactive } from 'vue'
+import { useRouter } from 'vue-router'
 import { api } from '../lib/api'
 import { toast } from '../lib/toast'
 
+const router = useRouter()
 const loading = ref(true)
+
 const saving = ref(false)
 const resume = reactive({
   slug: '',
@@ -49,7 +52,15 @@ async function saveResume() {
   }
 }
 
+function handleLogout() {
+  localStorage.removeItem('token')
+  localStorage.removeItem('user')
+  router.push('/login')
+  toast.info('Logged out')
+}
+
 function addExperience() {
+
   resume.content.experience.push({ title: '', company: '', date: '', description: '' })
 }
 
@@ -85,11 +96,13 @@ function removeSkill(index) {
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
           </svg>
         </a>
+        <button @click="handleLogout" class="text-gray-400 hover:text-white font-medium transition">Logout</button>
         <button @click="saveResume" :disabled="saving" class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-lg font-bold transition disabled:opacity-50">
           {{ saving ? 'Saving...' : 'Save Changes' }}
         </button>
       </div>
     </nav>
+
 
     <div v-if="loading" class="p-12 text-center text-gray-500">Loading your profile...</div>
 
