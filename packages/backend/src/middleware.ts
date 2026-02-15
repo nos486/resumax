@@ -20,7 +20,7 @@ export const authMiddleware = createMiddleware<{ Bindings: Bindings; Variables: 
         }
 
         try {
-            const payload = await verify(token, c.env.JWT_SECRET)
+            const payload = await verify(token, c.env.JWT_SECRET, 'HS256')
             c.set('user', payload as unknown as Variables['user']) // Type assertion
             await next()
         } catch (e: any) {
