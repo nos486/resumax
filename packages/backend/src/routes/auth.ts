@@ -43,6 +43,12 @@ auth.post('/login', async (c) => {
         return c.json({ error: 'Email and password are required' }, 400)
     }
 
+    if (!c.env.JWT_SECRET) {
+        console.error('JWT_SECRET is not set')
+        return c.json({ error: 'Server misconfiguration: JWT_SECRET missing' }, 500)
+    }
+
+
     const user = await c.env.DB.prepare(
         'SELECT * FROM users WHERE email = ?'
     ).bind(email).first<{ id: number; email: string; password_hash: string }>()

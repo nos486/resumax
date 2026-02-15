@@ -9,6 +9,12 @@ const app = new Hono<{ Bindings: Bindings; Variables: Variables }>()
 
 app.use('*', cors())
 
+app.onError((err, c) => {
+  console.error('Internal Server Error:', err)
+  return c.json({ error: 'Internal Server Error', message: err.message }, 500)
+})
+
+
 app.route('/api/auth', auth)
 app.route('/api/resume', resume)
 app.route('/api/public', publicRoute)
