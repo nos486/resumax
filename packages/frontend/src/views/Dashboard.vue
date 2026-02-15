@@ -1,3 +1,4 @@
+<script setup>
 import { ref, onMounted, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '../lib/api'

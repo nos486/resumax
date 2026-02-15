@@ -1,3 +1,4 @@
+<script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '../lib/api'
@@ -52,9 +53,8 @@ async function handleLogin() {
           />
         </div>
 
-        <div v-if="error" class="text-red-400 text-sm bg-red-400/10 p-3 rounded-lg border border-red-400/20">
-          {{ error }}
-        </div>
+
+
 
         <button 
           type="submit" 
