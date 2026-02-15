@@ -3,6 +3,7 @@ import { ref, onMounted, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '../lib/api'
 import { toast } from '../lib/toast'
+import IconPicker from '../components/IconPicker.vue'
 
 const router = useRouter()
 const loading = ref(true)
@@ -12,10 +13,14 @@ const resume = reactive({
   slug: '',
   theme: 'modern',
   content: {
-    personalInfo: { name: '', title: '', bio: '', email: '', phone: '', location: '' },
+    personalInfo: { 
+      name: '', title: '', bio: '', email: '', phone: '', location: '',
+      image: '', 
+      links: [] 
+    },
     experience: [],
     education: [],
-    skills: []
+    skills: [] // Now array of categories: { category: 'Frontend', items: [{ name: 'Vue', icon: 'Smile' }] }
   }
 })
 
@@ -60,29 +65,46 @@ function handleLogout() {
   toast.info('Logged out')
 }
 
-function addExperience() {
-
-  resume.content.experience.push({ title: '', company: '', date: '', description: '' })
+// Links
+function addLink() {
+  if (!resume.content.personalInfo.links) resume.content.personalInfo.links = []
+  resume.content.personalInfo.links.push({ platform: '', url: '', icon: '' })
+}
+function removeLink(index) {
+  resume.content.personalInfo.links.splice(index, 1)
 }
 
+// Experience
+function addExperience() {
+  if (!resume.content.experience) resume.content.experience = []
+  resume.content.experience.push({ title: '', company: '', date: '', description: '', icon: '' })
+}
 function removeExperience(index) {
   resume.content.experience.splice(index, 1)
 }
 
+// Education
 function addEducation() {
-  resume.content.education.push({ degree: '', school: '', date: '' })
+  if (!resume.content.education) resume.content.education = []
+  resume.content.education.push({ degree: '', school: '', date: '', icon: '' })
 }
-
 function removeEducation(index) {
   resume.content.education.splice(index, 1)
 }
 
-function addSkill() {
-  resume.content.skills.push({ name: '' })
+// Skills (Categories)
+function addSkillCategory() {
+  if (!resume.content.skills) resume.content.skills = []
+  resume.content.skills.push({ category: 'New Category', items: [] })
 }
-
-function removeSkill(index) {
+function removeSkillCategory(index) {
   resume.content.skills.splice(index, 1)
+}
+function addSkillItem(categoryIndex) {
+  resume.content.skills[categoryIndex].items.push({ name: '', icon: '' })
+}
+function removeSkillItem(categoryIndex, itemIndex) {
+  resume.content.skills[categoryIndex].items.splice(itemIndex, 1)
 }
 </script>
 
@@ -134,6 +156,7 @@ function removeSkill(index) {
       </section>
 
       <!-- Personal Info -->
+      <!-- Personal Info -->
       <section class="bg-gray-800 rounded-xl p-6 border border-gray-700 shadow-md">
         <h2 class="text-xl font-bold text-white mb-4 border-b border-gray-700 pb-2">Personal Info</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -142,8 +165,24 @@ function removeSkill(index) {
           <input v-model="resume.content.personalInfo.email" placeholder="Email" class="bg-gray-900 border border-gray-700 rounded-lg py-3 px-4 text-white outline-none focus:ring-1 focus:ring-blue-500 w-full" />
           <input v-model="resume.content.personalInfo.phone" placeholder="Phone" class="bg-gray-900 border border-gray-700 rounded-lg py-3 px-4 text-white outline-none focus:ring-1 focus:ring-blue-500 w-full" />
           <input v-model="resume.content.personalInfo.location" placeholder="Location" class="bg-gray-900 border border-gray-700 rounded-lg py-3 px-4 text-white outline-none focus:ring-1 focus:ring-blue-500 w-full" />
+          <input v-model="resume.content.personalInfo.image" placeholder="Profile Image URL" class="bg-gray-900 border border-gray-700 rounded-lg py-3 px-4 text-white outline-none focus:ring-1 focus:ring-blue-500 w-full" />
+          
           <div class="col-span-1 md:col-span-2">
             <textarea v-model="resume.content.personalInfo.bio" placeholder="Professional Summary" rows="3" class="bg-gray-900 border border-gray-700 rounded-lg py-3 px-4 text-white outline-none focus:ring-1 focus:ring-blue-500 w-full"></textarea>
+          </div>
+
+          <!-- Social Links -->
+          <div class="col-span-1 md:col-span-2">
+            <div class="flex justify-between items-center mb-2">
+              <h3 class="font-semibold text-gray-300">Social Links</h3>
+              <button @click="addLink" class="text-xs bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 px-2 py-1 rounded transition">+ Add Link</button>
+            </div>
+            <div v-for="(link, index) in resume.content.personalInfo.links" :key="index" class="flex gap-2 mb-2 items-center">
+              <IconPicker v-model="link.icon" />
+              <input v-model="link.platform" placeholder="Platform (e.g. GitHub)" class="bg-gray-900 border border-gray-700 rounded px-3 py-2 text-white text-sm w-32" />
+              <input v-model="link.url" placeholder="URL" class="bg-gray-900 border border-gray-700 rounded px-3 py-2 text-white text-sm flex-1" />
+              <button @click="removeLink(index)" class="text-gray-500 hover:text-red-400">✕</button>
+            </div>
           </div>
         </div>
       </section>
@@ -156,12 +195,20 @@ function removeSkill(index) {
         </div>
         <div v-for="(exp, index) in resume.content.experience" :key="index" class="mb-6 p-4 bg-gray-900/50 rounded-lg border border-gray-700 relative group">
           <button @click="removeExperience(index)" class="absolute top-2 right-2 text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition">✕</button>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
-            <input v-model="exp.title" placeholder="Job Title" class="bg-gray-800 border-none rounded py-2 px-3 text-white placeholder-gray-600 focus:ring-1 focus:ring-blue-500" />
-            <input v-model="exp.company" placeholder="Company" class="bg-gray-800 border-none rounded py-2 px-3 text-white placeholder-gray-600 focus:ring-1 focus:ring-blue-500" />
-            <input v-model="exp.date" placeholder="Date Range" class="bg-gray-800 border-none rounded py-2 px-3 text-white placeholder-gray-600 focus:ring-1 focus:ring-blue-500" />
+          
+          <div class="flex gap-4 mb-3">
+             <div class="mt-1">
+               <IconPicker v-model="exp.icon" />
+             </div>
+             <div class="flex-1 space-y-3">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <input v-model="exp.title" placeholder="Job Title" class="bg-gray-800 border-none rounded py-2 px-3 text-white placeholder-gray-600 focus:ring-1 focus:ring-blue-500" />
+                  <input v-model="exp.company" placeholder="Company" class="bg-gray-800 border-none rounded py-2 px-3 text-white placeholder-gray-600 focus:ring-1 focus:ring-blue-500" />
+                  <input v-model="exp.date" placeholder="Date Range" class="bg-gray-800 border-none rounded py-2 px-3 text-white placeholder-gray-600 focus:ring-1 focus:ring-blue-500" />
+                </div>
+                <textarea v-model="exp.description" placeholder="Description" rows="2" class="w-full bg-gray-800 border-none rounded py-2 px-3 text-white placeholder-gray-600 focus:ring-1 focus:ring-blue-500"></textarea>
+             </div>
           </div>
-          <textarea v-model="exp.description" placeholder="Description" rows="2" class="w-full bg-gray-800 border-none rounded py-2 px-3 text-white placeholder-gray-600 focus:ring-1 focus:ring-blue-500"></textarea>
         </div>
       </section>
 
@@ -173,10 +220,16 @@ function removeSkill(index) {
         </div>
         <div v-for="(edu, index) in resume.content.education" :key="index" class="mb-4 p-4 bg-gray-900/50 rounded-lg border border-gray-700 relative group">
           <button @click="removeEducation(index)" class="absolute top-2 right-2 text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition">✕</button>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-             <input v-model="edu.school" placeholder="School" class="bg-gray-800 border-none rounded py-2 px-3 text-white placeholder-gray-600 focus:ring-1 focus:ring-purple-500" />
-             <input v-model="edu.degree" placeholder="Degree" class="bg-gray-800 border-none rounded py-2 px-3 text-white placeholder-gray-600 focus:ring-1 focus:ring-purple-500" />
-             <input v-model="edu.date" placeholder="Year" class="bg-gray-800 border-none rounded py-2 px-3 text-white placeholder-gray-600 focus:ring-1 focus:ring-purple-500" />
+          
+          <div class="flex gap-4">
+             <div class="mt-1">
+               <IconPicker v-model="edu.icon" />
+             </div>
+             <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input v-model="edu.school" placeholder="School" class="bg-gray-800 border-none rounded py-2 px-3 text-white placeholder-gray-600 focus:ring-1 focus:ring-purple-500" />
+                <input v-model="edu.degree" placeholder="Degree" class="bg-gray-800 border-none rounded py-2 px-3 text-white placeholder-gray-600 focus:ring-1 focus:ring-purple-500" />
+                <input v-model="edu.date" placeholder="Year" class="bg-gray-800 border-none rounded py-2 px-3 text-white placeholder-gray-600 focus:ring-1 focus:ring-purple-500" />
+             </div>
           </div>
         </div>
       </section>
@@ -185,13 +238,32 @@ function removeSkill(index) {
       <section class="bg-gray-800 rounded-xl p-6 border border-gray-700 shadow-md">
          <div class="flex justify-between items-center mb-4 border-b border-gray-700 pb-2">
           <h2 class="text-xl font-bold text-white">Skills</h2>
-          <button @click="addSkill" class="text-sm bg-green-600/20 text-green-400 hover:bg-green-600/30 px-3 py-1 rounded-md transition">+ Add</button>
+          <button @click="addSkillCategory" class="text-sm bg-green-600/20 text-green-400 hover:bg-green-600/30 px-3 py-1 rounded-md transition">+ Add Category</button>
         </div>
-        <div class="flex flex-wrap gap-3">
-          <div v-for="(skill, index) in resume.content.skills" :key="index" class="relative group">
-            <input v-model="skill.name" placeholder="Skill" class="bg-gray-900 border border-gray-600 rounded-full py-1 px-4 text-white placeholder-gray-600 focus:border-green-500 outline-none w-32 text-center" />
-            <button @click="removeSkill(index)" class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition">✕</button>
-          </div>
+
+        <div class="space-y-6">
+           <!-- Category Migration notice if using old format -->
+           <div v-if="resume.content.skills.length > 0 && !resume.content.skills[0].items" class="p-4 bg-yellow-900/20 border border-yellow-700/50 rounded text-yellow-500 text-sm">
+             Old skill format detected. Please delete existing skills and re-add them with categories.
+           </div>
+
+           <div v-else v-for="(cat, catIndex) in resume.content.skills" :key="catIndex" class="bg-gray-900/50 p-4 rounded-lg border border-gray-700 relative">
+             <div class="flex justify-between items-center mb-3">
+               <input v-model="cat.category" placeholder="Category Name (e.g. Frontend)" class="bg-transparent text-lg font-bold text-white outline-none placeholder-gray-600" />
+               <button @click="removeSkillCategory(catIndex)" class="text-gray-500 hover:text-red-400 text-sm">Remove Category</button>
+             </div>
+             
+             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+               <div v-for="(item, itemIndex) in cat.items" :key="itemIndex" class="flex gap-2 items-center bg-gray-800 p-2 rounded border border-gray-700 group relative">
+                  <IconPicker v-model="item.icon" />
+                  <input v-model="item.name" placeholder="Skill Name" class="bg-transparent text-white text-sm outline-none w-full" />
+                  <button @click="removeSkillItem(catIndex, itemIndex)" class="opacity-0 group-hover:opacity-100 absolute top-1 right-1 text-xs text-red-400">✕</button>
+               </div>
+               <button @click="addSkillItem(catIndex)" class="flex gap-2 items-center justify-center p-2 rounded border border-gray-700 border-dashed text-gray-500 hover:text-green-400 hover:border-green-500/50 transition text-sm">
+                 + Add Skill
+               </button>
+             </div>
+           </div>
         </div>
       </section>
 
