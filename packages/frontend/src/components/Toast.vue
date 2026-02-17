@@ -3,7 +3,7 @@ import { toastState, toast } from '../lib/toast'
 </script>
 
 <template>
-  <div class="fixed top-4 right-4 z-50 flex flex-col gap-2">
+  <div class="fixed top-4 right-4 z-[100] flex flex-col gap-2">
     <transition-group name="toast">
       <div 
         v-for="t in toastState.toasts" 
