@@ -128,8 +128,8 @@ if (!config.colors.sectionTitle) {
 if (!config.sectionStyles) {
   config.sectionStyles = {
     education: 'card',
-    experience: 'card',
-    skills: 'card',
+    experience: 'timeline',
+    skills: 'badges',
     certifications: 'card'
   }
 }
@@ -341,9 +341,43 @@ function moveSection(sectionId, from, to) {
     <div>
       <h3 class="text-sm font-bold text-gray-300 mb-3">Section Styles</h3>
       <div class="space-y-3">
-        <div v-for="section in ['education', 'experience', 'skills', 'certifications']" :key="section" class="flex items-center justify-between">
-          <label class="text-xs text-gray-400 capitalize">{{ section }}</label>
-          <select v-model="config.sectionStyles[section]" class="bg-gray-700 text-gray-200 text-xs px-3 py-1.5 rounded border border-gray-600 focus:border-blue-500 focus:outline-none">
+        <!-- Education -->
+        <div class="flex items-center justify-between">
+          <label class="text-xs text-gray-400">Education</label>
+          <select v-model="config.sectionStyles.education" class="bg-gray-700 text-gray-200 text-xs px-3 py-1.5 rounded border border-gray-600 focus:border-blue-500 focus:outline-none">
+            <option value="card">Card</option>
+            <option value="simple">Simple</option>
+            <option value="bordered">Bordered</option>
+            <option value="minimal">Minimal</option>
+          </select>
+        </div>
+        
+        <!-- Experience -->
+        <div class="flex items-center justify-between">
+          <label class="text-xs text-gray-400">Experience</label>
+          <select v-model="config.sectionStyles.experience" class="bg-gray-700 text-gray-200 text-xs px-3 py-1.5 rounded border border-gray-600 focus:border-blue-500 focus:outline-none">
+            <option value="timeline">Timeline (with line)</option>
+            <option value="simple">Simple (no line)</option>
+            <option value="card">Card</option>
+            <option value="minimal">Minimal</option>
+          </select>
+        </div>
+        
+        <!-- Skills -->
+        <div class="flex items-center justify-between">
+          <label class="text-xs text-gray-400">Skills</label>
+          <select v-model="config.sectionStyles.skills" class="bg-gray-700 text-gray-200 text-xs px-3 py-1.5 rounded border border-gray-600 focus:border-blue-500 focus:outline-none">
+            <option value="badges">Colored Badges</option>
+            <option value="simple">Simple Text</option>
+            <option value="outlined">Outlined Badges</option>
+            <option value="minimal">Minimal</option>
+          </select>
+        </div>
+        
+        <!-- Certifications -->
+        <div class="flex items-center justify-between">
+          <label class="text-xs text-gray-400">Certifications</label>
+          <select v-model="config.sectionStyles.certifications" class="bg-gray-700 text-gray-200 text-xs px-3 py-1.5 rounded border border-gray-600 focus:border-blue-500 focus:outline-none">
             <option value="card">Card</option>
             <option value="simple">Simple</option>
             <option value="bordered">Bordered</option>

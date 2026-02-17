@@ -11,7 +11,7 @@ const renderIcon = (name) => {
   return icons[name]
 }
 
-// Function to get section card classes based on style
+// Function to get section card classes (for education, certifications)
 const getSectionCardClass = (sectionType) => {
   const style = config.value.sectionStyles?.[sectionType] || 'card'
   
@@ -23,6 +23,50 @@ const getSectionCardClass = (sectionType) => {
   }
   
   return styles[style] || styles.card
+}
+
+// Function to get experience item classes
+const getExperienceItemClass = () => {
+  const style = config.value.sectionStyles?.experience || 'timeline'
+  
+  const styles = {
+    timeline: 'relative pl-6 border-l-2 border-accent',
+    simple: 'py-3',
+    card: 'bg-surface p-4 rounded-lg border border-gray-200 hover:shadow-md transition',
+    minimal: 'py-3 border-b border-gray-100 last:border-b-0'
+  }
+  
+  return styles[style] || styles.timeline
+}
+
+// Function to check if experience should show timeline dot
+const showExperienceDot = () => {
+  const style = config.value.sectionStyles?.experience || 'timeline'
+  return style === 'timeline'
+}
+
+// Function to get skill badge classes
+const getSkillBadgeClass = () => {
+  const style = config.value.sectionStyles?.skills || 'badges'
+  
+  const styles = {
+    badges: 'skill-badge text-xs',
+    simple: 'text-sm text-content',
+    outlined: 'px-3 py-1 text-xs border border-accent text-accent rounded-full',
+    minimal: 'text-xs text-secondary'
+  }
+  
+  return styles[style] || styles.badges
+}
+
+// Function to get skill container class
+const getSkillContainerClass = () => {
+  const style = config.value.sectionStyles?.skills || 'badges'
+  
+  if (style === 'simple' || style === 'minimal') {
+    return 'space-y-1'
+  }
+  return 'flex flex-wrap gap-2'
 }
 
 // Default theme config
@@ -189,8 +233,8 @@ const renderSection = (sectionId) => {
             <section v-else-if="renderSection(section).type === 'experience'">
               <h2 class="section-heading">Experience</h2>
               <div class="space-y-6">
-                <div v-for="(exp, index) in renderSection(section).data" :key="index" class="relative pl-6 border-l-2 border-accent">
-                  <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full accent-dot"></div>
+                <div v-for="(exp, index) in renderSection(section).data" :key="index" :class="getExperienceItemClass()">
+                  <div v-if="showExperienceDot()" class="absolute -left-[9px] top-0 w-4 h-4 rounded-full accent-dot"></div>
                   <div class="flex flex-col sm:flex-row sm:justify-between sm:items-baseline mb-1">
                     <h3 class="text-lg font-bold text-primary flex items-center gap-2">
                       <component :is="renderIcon(exp.icon)" v-if="config.showIcons && exp.icon" class="w-4 h-4" />
@@ -224,9 +268,9 @@ const renderSection = (sectionId) => {
               <div v-if="renderSection(section).data[0]?.items" class="space-y-6">
                 <div v-for="(cat, i) in renderSection(section).data" :key="i">
                   <h3 class="text-lg font-semibold text-primary mb-2">{{ cat.category }}</h3>
-                  <div class="flex flex-wrap gap-2">
-                    <span v-for="(item, j) in cat.items" :key="j" class="skill-badge">
-                      <component :is="renderIcon(item.icon)" v-if="config.showIcons && item.icon" class="w-3 h-3" />
+                  <div :class="getSkillContainerClass()">
+                    <span v-for="(item, j) in cat.items" :key="j" :class="getSkillBadgeClass()">
+                      <component :is="renderIcon(item.icon)" v-if="config.showIcons && item.icon && config.sectionStyles?.skills !== 'simple' && config.sectionStyles?.skills !== 'minimal'" class="w-3 h-3" />
                       {{ item.name }}
                     </span>
                   </div>
@@ -292,9 +336,9 @@ const renderSection = (sectionId) => {
                   <div v-if="renderSection(section).data[0]?.items" class="space-y-4">
                     <div v-for="(cat, i) in renderSection(section).data" :key="i">
                       <h4 class="text-xs font-bold text-primary mb-2">{{ cat.category }}</h4>
-                      <div class="flex flex-wrap gap-2">
-                        <span v-for="(item, j) in cat.items" :key="j" class="skill-badge text-xs">
-                          <component :is="renderIcon(item.icon)" v-if="config.showIcons && item.icon" class="w-3 h-3" />
+                      <div :class="getSkillContainerClass()">
+                        <span v-for="(item, j) in cat.items" :key="j" :class="getSkillBadgeClass()">
+                          <component :is="renderIcon(item.icon)" v-if="config.showIcons && item.icon && config.sectionStyles?.skills !== 'simple' && config.sectionStyles?.skills !== 'minimal'" class="w-3 h-3" />
                           {{ item.name }}
                         </span>
                       </div>
@@ -329,8 +373,8 @@ const renderSection = (sectionId) => {
                 <section v-if="renderSection(section).type === 'experience'">
                   <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-4 section-title-sm">Experience</h3>
                   <div class="space-y-6">
-                    <div v-for="(exp, index) in renderSection(section).data" :key="index" class="relative pl-6 border-l-2 border-accent">
-                      <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full accent-dot"></div>
+                    <div v-for="(exp, index) in renderSection(section).data" :key="index" :class="getExperienceItemClass()">
+                      <div v-if="showExperienceDot()" class="absolute -left-[9px] top-0 w-4 h-4 rounded-full accent-dot"></div>
                       <div class="flex flex-col sm:flex-row sm:justify-between sm:items-baseline mb-1">
                         <h4 class="text-lg font-bold text-primary flex items-center gap-2">
                           <component :is="renderIcon(exp.icon)" v-if="config.showIcons && exp.icon" class="w-4 h-4" />
