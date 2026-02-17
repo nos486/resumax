@@ -11,6 +11,20 @@ const renderIcon = (name) => {
   return icons[name]
 }
 
+// Function to get section card classes based on style
+const getSectionCardClass = (sectionType) => {
+  const style = config.value.sectionStyles?.[sectionType] || 'card'
+  
+  const styles = {
+    card: 'bg-surface p-3 md:p-4 rounded-lg border border-gray-200 hover:shadow-md transition',
+    simple: 'py-2',
+    bordered: 'p-3 md:p-4 border border-gray-300 rounded',
+    minimal: 'py-3 border-b border-gray-100 last:border-b-0'
+  }
+  
+  return styles[style] || styles.card
+}
+
 // Default theme config
 const defaultConfig = {
   colors: {
@@ -193,7 +207,7 @@ const renderSection = (sectionId) => {
             <section v-else-if="renderSection(section).type === 'education'">
               <h2 class="section-heading">Education</h2>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div v-for="(edu, index) in renderSection(section).data" :key="index" class="bg-surface p-4 rounded-lg border border-gray-200 hover:shadow-md transition">
+                <div v-for="(edu, index) in renderSection(section).data" :key="index" :class="getSectionCardClass('education')">
                   <h3 class="font-bold text-primary flex items-center gap-2">
                     <component :is="renderIcon(edu.icon)" v-if="config.showIcons && edu.icon" class="w-4 h-4" />
                     {{ edu.school }}
@@ -262,7 +276,7 @@ const renderSection = (sectionId) => {
                 <section v-else-if="renderSection(section).type === 'education'" class="mb-6">
                   <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 section-title-sm">Education</h3>
                   <div class="space-y-3">
-                    <div v-for="(edu, index) in renderSection(section).data" :key="index" class="bg-surface p-3 rounded-lg border border-gray-200 hover:shadow-md transition">
+                    <div v-for="(edu, index) in renderSection(section).data" :key="index" :class="getSectionCardClass('education')">
                       <div class="font-bold text-primary text-sm flex items-center gap-2">
                         <component :is="renderIcon(edu.icon)" v-if="config.showIcons && edu.icon" class="w-4 h-4" />
                         {{ edu.school }}
@@ -291,7 +305,7 @@ const renderSection = (sectionId) => {
                 <section v-else-if="renderSection(section).type === 'certifications'" class="mb-6">
                   <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 section-title-sm">Certifications</h3>
                   <div class="space-y-3">
-                    <div v-for="(cert, index) in renderSection(section).data" :key="index" class="bg-surface p-3 rounded-lg border border-gray-200 hover:shadow-md transition">
+                    <div v-for="(cert, index) in renderSection(section).data" :key="index" :class="getSectionCardClass('certifications')">
                       <div class="font-bold text-primary text-sm">{{ cert.name }}</div>
                       <div class="text-xs text-accent mt-1">{{ cert.issuer }}</div>
                       <div class="text-xs text-secondary mt-1">{{ cert.date }}</div>
@@ -338,7 +352,7 @@ const renderSection = (sectionId) => {
                 <section v-else-if="renderSection(section).type === 'education'">
                   <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 section-title-sm">Education</h3>
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div v-for="(edu, index) in renderSection(section).data" :key="index" class="bg-surface p-4 rounded-lg border border-gray-200 hover:shadow-md transition">
+                    <div v-for="(edu, index) in renderSection(section).data" :key="index" :class="getSectionCardClass('education')">
                       <h4 class="font-bold text-primary flex items-center gap-2">
                         <component :is="renderIcon(edu.icon)" v-if="config.showIcons && edu.icon" class="w-4 h-4" />
                         {{ edu.school }}
@@ -367,7 +381,7 @@ const renderSection = (sectionId) => {
                 <section v-else-if="renderSection(section).type === 'certifications'">
                   <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 section-title-sm">Certifications</h3>
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div v-for="(cert, index) in renderSection(section).data" :key="index" class="bg-surface p-4 rounded-lg border border-gray-200 hover:shadow-md transition">
+                    <div v-for="(cert, index) in renderSection(section).data" :key="index" :class="getSectionCardClass('certifications')">
                       <h4 class="font-bold text-primary">{{ cert.name }}</h4>
                       <div class="text-accent text-sm font-medium">{{ cert.issuer }}</div>
                       <div class="text-secondary text-xs mt-1">{{ cert.date }}</div>
