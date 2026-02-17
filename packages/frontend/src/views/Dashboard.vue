@@ -1,15 +1,38 @@
 <script setup>
-import { ref, onMounted, reactive } from 'vue'
+import { ref, onMounted, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '../lib/api'
 import { toast } from '../lib/toast'
 import IconPicker from '../components/IconPicker.vue'
 import ThemeCustomizer from '../components/ThemeCustomizer.vue'
 import DynamicTheme from '../components/themes/DynamicTheme.vue'
+import { 
+  Settings, 
+  Palette, 
+  User, 
+  Briefcase, 
+  GraduationCap, 
+  Award, 
+  Wrench, 
+  PlusCircle, 
+  LogOut, 
+  Save, 
+  Eye, 
+  ChevronDown,
+  ExternalLink,
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  Trash2,
+  Image as ImageIcon,
+  Link as LinkIcon
+} from 'lucide-vue-next'
 
 const router = useRouter()
 const loading = ref(true)
 const activeTab = ref('editor') // 'editor' or 'preview'
+const saving = ref(false)
+
 const openSections = reactive({
   settings: false,
   theme: false,
@@ -25,7 +48,6 @@ const toggleSection = (key) => {
   openSections[key] = !openSections[key]
 }
 
-const saving = ref(false)
 const resume = reactive({
   slug: '',
   theme: 'modern',
@@ -37,11 +59,9 @@ const resume = reactive({
     },
     experience: [],
     education: [],
-    experience: [],
-    education: [],
-    certifications: [], // { name: '', issuer: '', date: '', url: '' }
-    skills: [], // Now array of categories: { category: 'Frontend', items: [{ name: 'Vue', icon: 'Smile' }] }
-    customSections: [], // { id: 'custom-1', title: 'Projects', content: '...' }
+    certifications: [],
+    skills: [],
+    customSections: [],
     themeConfig: {
       colors: {
         primary: '#3b82f6',
@@ -68,10 +88,24 @@ onMounted(async () => {
     if (data) {
       resume.slug = data.slug || ''
       resume.theme = data.theme || 'modern'
-      // Merge content to ensure structure exists
       if (data.content) {
         resume.content = { ...resume.content, ...data.content }
       }
+      
+      // Migration: ensure certifications is in sectionOrder
+      if (resume.content.themeConfig?.sectionOrder && !resume.content.themeConfig.sectionOrder.includes('certifications')) {
+        const eduIdx = resume.content.themeConfig.sectionOrder.indexOf('education')
+        if (eduIdx > -1) {
+          resume.content.themeConfig.sectionOrder.splice(eduIdx + 1, 0, 'certifications')
+        } else {
+          resume.content.themeConfig.sectionOrder.push('certifications')
+        }
+      }
+      
+      // Ensure arrays exist
+      if (!resume.content.certifications) resume.content.certifications = []
+      if (!resume.content.skills) resume.content.skills = []
+      if (!resume.content.customSections) resume.content.customSections = []
     }
   } catch (e) {
     console.error(e)
@@ -103,391 +137,346 @@ function handleLogout() {
   toast.info('Logged out')
 }
 
-// Image Upload
+// Handlers
 function handleImageUpload(event) {
   const file = event.target.files[0]
-  if (!file) return
-
-  if (file.size > 2 * 1024 * 1024) {
-    toast.error('Image too large. Please choose a file under 2MB.')
+  if (!file || file.size > 2 * 1024 * 1024) {
+    toast.error('Image must be under 2MB.')
     return
   }
-
   const reader = new FileReader()
   reader.onload = (e) => {
-    const img = new Image()
-    img.onload = () => {
-      const canvas = document.createElement('canvas')
-      const MAX_WIDTH = 400
-      const MAX_HEIGHT = 400
-      let width = img.width
-      let height = img.height
-
-      if (width > height) {
-        if (width > MAX_WIDTH) {
-          height *= MAX_WIDTH / width
-          width = MAX_WIDTH
-        }
-      } else {
-        if (height > MAX_HEIGHT) {
-          width *= MAX_HEIGHT / height
-          height = MAX_HEIGHT
-        }
-      }
-
-      canvas.width = width
-      canvas.height = height
-      const ctx = canvas.getContext('2d')
-      ctx.drawImage(img, 0, 0, width, height)
-      
-      // Compress to JPEG at 80% quality
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.8)
-      resume.content.personalInfo.image = dataUrl
-      toast.success('Image uploaded and optimized!')
-    }
-    img.src = e.target.result
+    resume.content.personalInfo.image = e.target.result
+    toast.success('Image uploaded!')
   }
   reader.readAsDataURL(file)
 }
 
-// Links
-function addLink() {
-  if (!resume.content.personalInfo.links) resume.content.personalInfo.links = []
-  resume.content.personalInfo.links.push({ platform: '', url: '', icon: '' })
-}
-function removeLink(index) {
-  resume.content.personalInfo.links.splice(index, 1)
-}
+function addLink() { resume.content.personalInfo.links.push({ platform: '', url: '', icon: 'Link' }) }
+function removeLink(index) { resume.content.personalInfo.links.splice(index, 1) }
 
-// Experience
-function addExperience() {
-  if (!resume.content.experience) resume.content.experience = []
-  resume.content.experience.push({ title: '', company: '', date: '', description: '', icon: '' })
-}
-function removeExperience(index) {
-  resume.content.experience.splice(index, 1)
-}
+function addExperience() { resume.content.experience.push({ title: '', company: '', date: '', description: '', icon: 'Briefcase' }) }
+function removeExperience(index) { resume.content.experience.splice(index, 1) }
 
-// Education
-function addEducation() {
-  if (!resume.content.education) resume.content.education = []
-  resume.content.education.push({ degree: '', school: '', date: '', icon: '' })
-}
-function removeEducation(index) {
-  resume.content.education.splice(index, 1)
-}
+function addEducation() { resume.content.education.push({ degree: '', school: '', date: '', icon: 'GraduationCap' }) }
+function removeEducation(index) { resume.content.education.splice(index, 1) }
 
-// Certifications
-function addCertification() {
-  if (!resume.content.certifications) resume.content.certifications = []
-  resume.content.certifications.push({ name: '', issuer: '', date: '', url: '' })
-}
-function removeCertification(index) {
-  resume.content.certifications.splice(index, 1)
-}
+function addCertification() { resume.content.certifications.push({ name: '', issuer: '', date: '', url: '' }) }
+function removeCertification(index) { resume.content.certifications.splice(index, 1) }
 
-// Skills (Categories)
-function addSkillCategory() {
-  if (!resume.content.skills) resume.content.skills = []
-  resume.content.skills.push({ category: 'New Category', items: [] })
-}
-function removeSkillCategory(index) {
-  resume.content.skills.splice(index, 1)
-}
-function addSkillItem(categoryIndex) {
-  resume.content.skills[categoryIndex].items.push({ name: '', icon: '' })
-}
-function removeSkillItem(categoryIndex, itemIndex) {
-  resume.content.skills[categoryIndex].items.splice(itemIndex, 1)
-}
+function addSkillCategory() { resume.content.skills.push({ category: 'New Category', items: [] }) }
+function removeSkillCategory(index) { resume.content.skills.splice(index, 1) }
+function addSkillItem(catIdx) { resume.content.skills[catIdx].items.push({ name: '', icon: '' }) }
+function removeSkillItem(catIdx, itemIdx) { resume.content.skills[catIdx].items.splice(itemIdx, 1) }
 
-// Custom Sections
 function addCustomSection() {
-  if (!resume.content.customSections) resume.content.customSections = []
   const id = `custom-${Date.now()}`
   resume.content.customSections.push({ id, title: 'New Section', content: '' })
-  
-  // Add to order lists
   resume.content.themeConfig.sectionOrder.push(id)
-  if (resume.content.themeConfig.columnAssignment) {
-    resume.content.themeConfig.columnAssignment.leftColumn.push(id) // Default to left
-  }
 }
-
 function removeCustomSection(index) {
   const section = resume.content.customSections[index]
   resume.content.customSections.splice(index, 1)
-  
-  // Remove from order lists
   const orderIdx = resume.content.themeConfig.sectionOrder.indexOf(section.id)
   if (orderIdx > -1) resume.content.themeConfig.sectionOrder.splice(orderIdx, 1)
-  
-  if (resume.content.themeConfig.columnAssignment) {
-    const leftIdx = resume.content.themeConfig.columnAssignment.leftColumn.indexOf(section.id)
-    if (leftIdx > -1) resume.content.themeConfig.columnAssignment.leftColumn.splice(leftIdx, 1)
-    
-    const rightIdx = resume.content.themeConfig.columnAssignment.rightColumn.indexOf(section.id)
-    if (rightIdx > -1) resume.content.themeConfig.columnAssignment.rightColumn.splice(rightIdx, 1)
-  }
 }
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-900 text-gray-200">
-    <nav class="bg-gray-800 border-b border-gray-700 px-8 py-4 flex justify-between items-center sticky top-0 z-10 shadow-lg">
-      <h1 class="text-xl font-bold text-white bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">Resumax Editor</h1>
-      <div class="flex items-center gap-4">
-        <a v-if="resume.slug" :href="`/v/${resume.slug}`" target="_blank" class="text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1">
-          <span>View Public</span>
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-          </svg>
+  <div class="h-screen bg-gray-950 text-gray-200 flex flex-col overflow-hidden">
+    <!-- Top Navbar -->
+    <nav class="bg-gray-900 border-b border-gray-800 px-6 py-3 flex justify-between items-center z-30 shadow-2xl">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center font-bold text-white">R</div>
+        <h1 class="text-lg font-bold text-white hidden sm:block">Resumax Dashboard</h1>
+      </div>
+
+      <!-- Mobile Tab Switcher -->
+      <div class="md:hidden flex bg-gray-800 rounded-lg p-1">
+        <button 
+          @click="activeTab = 'editor'"
+          :class="activeTab === 'editor' ? 'bg-gray-700 text-white shadow-sm' : 'text-gray-400'"
+          class="px-4 py-1.5 rounded-md text-sm font-medium transition duration-200"
+        >
+          Editor
+        </button>
+        <button 
+          @click="activeTab = 'preview'"
+          :class="activeTab === 'preview' ? 'bg-gray-700 text-white shadow-sm' : 'text-gray-400'"
+          class="px-4 py-1.5 rounded-md text-sm font-medium transition duration-200"
+        >
+          Preview
+        </button>
+      </div>
+
+      <div class="flex items-center gap-2 sm:gap-4">
+        <a v-if="resume.slug" :href="`/v/${resume.slug}`" target="_blank" class="p-2 text-gray-400 hover:text-white transition rounded-full hover:bg-gray-800" title="View Public Page">
+          <ExternalLink class="w-5 h-5" />
         </a>
-        <button @click="handleLogout" class="text-gray-400 hover:text-white font-medium transition">Logout</button>
-        <button @click="saveResume" :disabled="saving" class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-lg font-bold transition disabled:opacity-50">
-          {{ saving ? 'Saving...' : 'Save Changes' }}
+        <button @click="handleLogout" class="p-2 text-gray-400 hover:text-red-400 transition rounded-full hover:bg-gray-800" title="Logout">
+          <LogOut class="w-5 h-5" />
+        </button>
+        <button 
+          @click="saveResume" 
+          :disabled="saving" 
+          class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-full font-bold transition flex items-center gap-2 shadow-lg shadow-blue-900/20 disabled:opacity-50"
+        >
+          <Save class="w-4 h-4" />
+          <span class="hidden sm:inline">{{ saving ? 'Saving...' : 'Save' }}</span>
         </button>
       </div>
     </nav>
 
-
-    <div v-if="loading" class="p-12 text-center text-gray-500">Loading your profile...</div>
-
-    <div v-else class="container mx-auto p-8 max-w-4xl space-y-8 pb-20">
-      
-
-
-      <!-- Settings -->
-      <section class="bg-gray-800 rounded-xl p-6 border border-gray-700 shadow-md">
-        <h2 class="text-xl font-bold text-white mb-4 border-b border-gray-700 pb-2">Settings</h2>
-        <div class="grid grid-cols-1 gap-6">
-          <div>
-            <label class="block text-gray-400 mb-1 text-sm">Public URL Slug</label>
-            <div class="flex items-center bg-gray-900 rounded-lg border border-gray-700 overflow-hidden">
-               <span class="px-3 text-gray-500 text-sm">/v/</span>
-               <input v-model="resume.slug" type="text" placeholder="your-name" class="bg-transparent w-full py-2 px-2 text-white outline-none active:bg-gray-800 focus:bg-gray-800 transition" />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Theme Customization -->
-      <section class="bg-gray-800 rounded-xl p-6 border border-gray-700 shadow-md">
-        <h2 class="text-xl font-bold text-white mb-4 border-b border-gray-700 pb-2">Theme Customization</h2>
-        <ThemeCustomizer v-model="resume.content.themeConfig" :custom-sections="resume.content.customSections" />
-      </section>
-
-      <!-- Personal Info -->
-      <!-- Personal Info -->
-      <section class="bg-gray-800 rounded-xl p-6 border border-gray-700 shadow-md">
-        <h2 class="text-xl font-bold text-white mb-4 border-b border-gray-700 pb-2">Personal Info</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <input v-model="resume.content.personalInfo.name" placeholder="Full Name" class="bg-gray-900 border border-gray-700 rounded-lg py-3 px-4 text-white outline-none focus:ring-1 focus:ring-blue-500 w-full" />
-          <input v-model="resume.content.personalInfo.title" placeholder="Job Title" class="bg-gray-900 border border-gray-700 rounded-lg py-3 px-4 text-white outline-none focus:ring-1 focus:ring-blue-500 w-full" />
-          <input v-model="resume.content.personalInfo.email" placeholder="Email" class="bg-gray-900 border border-gray-700 rounded-lg py-3 px-4 text-white outline-none focus:ring-1 focus:ring-blue-500 w-full" />
-          <input v-model="resume.content.personalInfo.phone" placeholder="Phone" class="bg-gray-900 border border-gray-700 rounded-lg py-3 px-4 text-white outline-none focus:ring-1 focus:ring-blue-500 w-full" />
-          <input v-model="resume.content.personalInfo.location" placeholder="Location" class="bg-gray-900 border border-gray-700 rounded-lg py-3 px-4 text-white outline-none focus:ring-1 focus:ring-blue-500 w-full" />
-          <div class="space-y-2">
-            <label class="block text-gray-400 text-sm">Profile Image</label>
-            <div class="flex items-center gap-4">
-              <div v-if="resume.content.personalInfo.image" class="relative group">
-                <img :src="resume.content.personalInfo.image" class="w-16 h-16 rounded-full object-cover border border-gray-600" />
-                <button @click="resume.content.personalInfo.image = ''" class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition">✕</button>
-              </div>
-              <div class="flex-1">
-                <input 
-                  type="file" 
-                  accept="image/jpeg,image/png,image/webp"
-                  @change="handleImageUpload" 
-                  class="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer"
-                />
-                <p class="text-xs text-gray-500 mt-1">Max 400x400px, auto-compressed.</p>
-              </div>
-            </div>
-          </div>
-          
-          <div class="col-span-1 md:col-span-2">
-            <textarea v-model="resume.content.personalInfo.bio" placeholder="Professional Summary" rows="3" class="bg-gray-900 border border-gray-700 rounded-lg py-3 px-4 text-white outline-none focus:ring-1 focus:ring-blue-500 w-full"></textarea>
-          </div>
-
-          <!-- Social Links -->
-          <div class="col-span-1 md:col-span-2">
-            <div class="flex justify-between items-center mb-2">
-              <h3 class="font-semibold text-gray-300">Social Links</h3>
-              <button @click="addLink" class="text-xs bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 px-2 py-1 rounded transition">+ Add Link</button>
-            </div>
-            <div v-for="(link, index) in resume.content.personalInfo.links" :key="index" class="flex gap-2 mb-2 items-center">
-              <IconPicker v-model="link.icon" />
-              <input v-model="link.platform" placeholder="Platform (e.g. GitHub)" class="bg-gray-900 border border-gray-700 rounded px-3 py-2 text-white text-sm w-32" />
-              <input v-model="link.url" placeholder="URL" class="bg-gray-900 border border-gray-700 rounded px-3 py-2 text-white text-sm flex-1" />
-              <button @click="removeLink(index)" class="text-gray-500 hover:text-red-400">✕</button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Experience -->
-      <section class="bg-gray-800 rounded-xl p-6 border border-gray-700 shadow-md">
-        <div class="flex justify-between items-center mb-4 border-b border-gray-700 pb-2">
-          <h2 class="text-xl font-bold text-white">Experience</h2>
-          <button @click="addExperience" class="text-sm bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 px-3 py-1 rounded-md transition">+ Add</button>
-        </div>
-        <div v-for="(exp, index) in resume.content.experience" :key="index" class="mb-6 p-4 bg-gray-900/50 rounded-lg border border-gray-700 relative group">
-          <button @click="removeExperience(index)" class="absolute top-2 right-2 text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition">✕</button>
-          
-          <div class="flex gap-4 mb-3">
-             <div class="mt-1">
-               <IconPicker v-model="exp.icon" />
-             </div>
-             <div class="flex-1 space-y-3">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <input v-model="exp.title" placeholder="Job Title" class="bg-gray-800 border-none rounded py-2 px-3 text-white placeholder-gray-600 focus:ring-1 focus:ring-blue-500" />
-                  <input v-model="exp.company" placeholder="Company" class="bg-gray-800 border-none rounded py-2 px-3 text-white placeholder-gray-600 focus:ring-1 focus:ring-blue-500" />
-                  <input v-model="exp.date" placeholder="Date Range" class="bg-gray-800 border-none rounded py-2 px-3 text-white placeholder-gray-600 focus:ring-1 focus:ring-blue-500" />
-                </div>
-                <textarea v-model="exp.description" placeholder="Description" rows="2" class="w-full bg-gray-800 border-none rounded py-2 px-3 text-white placeholder-gray-600 focus:ring-1 focus:ring-blue-500"></textarea>
-             </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Education -->
-      <section class="bg-gray-800 rounded-xl p-6 border border-gray-700 shadow-md">
-        <div class="flex justify-between items-center mb-4 border-b border-gray-700 pb-2">
-          <h2 class="text-xl font-bold text-white">Education</h2>
-          <button @click="addEducation" class="text-sm bg-purple-600/20 text-purple-400 hover:bg-purple-600/30 px-3 py-1 rounded-md transition">+ Add</button>
-        </div>
-        <div v-for="(edu, index) in resume.content.education" :key="index" class="mb-4 p-4 bg-gray-900/50 rounded-lg border border-gray-700 relative group">
-          <button @click="removeEducation(index)" class="absolute top-2 right-2 text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition">✕</button>
-          
-          <div class="flex gap-4">
-             <div class="mt-1">
-               <IconPicker v-model="edu.icon" />
-             </div>
-             <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
-                <input v-model="edu.school" placeholder="School" class="bg-gray-800 border-none rounded py-2 px-3 text-white placeholder-gray-600 focus:ring-1 focus:ring-purple-500" />
-                <input v-model="edu.degree" placeholder="Degree" class="bg-gray-800 border-none rounded py-2 px-3 text-white placeholder-gray-600 focus:ring-1 focus:ring-purple-500" />
-                <input v-model="edu.date" placeholder="Year" class="bg-gray-800 border-none rounded py-2 px-3 text-white placeholder-gray-600 focus:ring-1 focus:ring-purple-500" />
-             </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Certifications -->
-      <section class="bg-gray-800 rounded-xl overflow-hidden border border-gray-700 shadow-md transition-all duration-200">
-        <div 
-          @click="toggleSection('certifications')"
-          class="flex justify-between items-center p-6 cursor-pointer hover:bg-gray-750 select-none"
-        >
-          <div class="flex items-center gap-3">
-             <div class="p-2 bg-yellow-500/10 rounded-lg text-yellow-400">
-               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-               </svg>
-             </div>
-             <h2 class="text-xl font-bold text-white">Licenses & Certifications</h2>
-          </div>
-          <div class="flex items-center gap-3">
-             <span class="text-gray-500 text-sm">{{ resume.content.certifications?.length || 0 }} items</span>
-             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500 transform transition-transform" :class="{ 'rotate-180': openSections.certifications }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-             </svg>
-          </div>
-        </div>
-
-        <div v-show="openSections.certifications" class="p-6 pt-0 border-t border-gray-700/50">
-           <div class="flex justify-end mb-4 pt-4">
-             <button @click.stop="addCertification" class="text-sm bg-yellow-600/20 text-yellow-400 hover:bg-yellow-600/30 px-3 py-1 rounded-md transition border border-yellow-600/30 flex items-center gap-1">
-               <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
-               Add
-             </button>
-           </div>
-           
-           <div v-for="(cert, index) in resume.content.certifications" :key="index" class="mb-4 p-4 bg-gray-900/50 rounded-lg border border-gray-700 relative group hover:border-yellow-500/30 transition">
-              <button @click="removeCertification(index)" class="absolute top-2 right-2 text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition p-1 rounded hover:bg-gray-800">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-              
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                 <div class="space-y-1">
-                   <label class="text-xs text-gray-500 uppercase font-semibold pl-1">Name</label>
-                   <input v-model="cert.name" placeholder="Certification Name" class="w-full bg-gray-800 border-none rounded py-2 px-3 text-white placeholder-gray-600 focus:ring-1 focus:ring-yellow-500 transition" />
-                 </div>
-                 <div class="space-y-1">
-                   <label class="text-xs text-gray-500 uppercase font-semibold pl-1">Issuing Organization</label>
-                   <input v-model="cert.issuer" placeholder="Issuer (e.g. Google)" class="w-full bg-gray-800 border-none rounded py-2 px-3 text-white placeholder-gray-600 focus:ring-1 focus:ring-yellow-500 transition" />
-                 </div>
-                 <div class="space-y-1">
-                   <label class="text-xs text-gray-500 uppercase font-semibold pl-1">Issue Date</label>
-                   <input v-model="cert.date" placeholder="Date (e.g. 2024)" class="w-full bg-gray-800 border-none rounded py-2 px-3 text-white placeholder-gray-600 focus:ring-1 focus:ring-yellow-500 transition" />
-                 </div>
-                 <div class="space-y-1">
-                   <label class="text-xs text-gray-500 uppercase font-semibold pl-1">Credential URL</label>
-                   <input v-model="cert.url" placeholder="https://..." class="w-full bg-gray-800 border-none rounded py-2 px-3 text-white placeholder-gray-600 focus:ring-1 focus:ring-yellow-500 transition" />
-                 </div>
-              </div>
-           </div>
-           
-           <div v-if="!resume.content.certifications || resume.content.certifications.length === 0" class="text-center py-8 text-gray-500 border-2 border-dashed border-gray-700/50 rounded-lg">
-             No certifications added yet.
-           </div>
-        </div>
-      </section>
-
-      <!-- Skills -->
-      <section class="bg-gray-800 rounded-xl p-6 border border-gray-700 shadow-md">
-         <div class="flex justify-between items-center mb-4 border-b border-gray-700 pb-2">
-          <h2 class="text-xl font-bold text-white">Skills</h2>
-          <button @click="addSkillCategory" class="text-sm bg-green-600/20 text-green-400 hover:bg-green-600/30 px-3 py-1 rounded-md transition">+ Add Category</button>
-        </div>
-
-        <div class="space-y-6">
-           <!-- Category Migration notice if using old format -->
-           <div v-if="resume.content.skills.length > 0 && !resume.content.skills[0].items" class="p-4 bg-yellow-900/20 border border-yellow-700/50 rounded text-yellow-500 text-sm">
-             Old skill format detected. Please delete existing skills and re-add them with categories.
-           </div>
-
-           <div v-else v-for="(cat, catIndex) in resume.content.skills" :key="catIndex" class="bg-gray-900/50 p-4 rounded-lg border border-gray-700 relative">
-             <div class="flex justify-between items-center mb-3">
-               <input v-model="cat.category" placeholder="Category Name (e.g. Frontend)" class="bg-transparent text-lg font-bold text-white outline-none placeholder-gray-600" />
-               <button @click="removeSkillCategory(catIndex)" class="text-gray-500 hover:text-red-400 text-sm">Remove Category</button>
-             </div>
-             
-             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-               <div v-for="(item, itemIndex) in cat.items" :key="itemIndex" class="flex gap-2 items-center bg-gray-800 p-2 rounded border border-gray-700 group relative">
-                  <IconPicker v-model="item.icon" />
-                  <input v-model="item.name" placeholder="Skill Name" class="bg-transparent text-white text-sm outline-none w-full" />
-                  <button @click="removeSkillItem(catIndex, itemIndex)" class="opacity-0 group-hover:opacity-100 absolute top-1 right-1 text-xs text-red-400">✕</button>
-               </div>
-               <button @click="addSkillItem(catIndex)" class="flex gap-2 items-center justify-center p-2 rounded border border-gray-700 border-dashed text-gray-500 hover:text-green-400 hover:border-green-500/50 transition text-sm">
-                 + Add Skill
-               </button>
-             </div>
-           </div>
-        </div>
-      </section>
-
-      <!-- Custom Sections -->
-      <section class="bg-gray-800 rounded-xl p-6 border border-gray-700 shadow-md">
-        <div class="flex justify-between items-center mb-4 border-b border-gray-700 pb-2">
-          <h2 class="text-xl font-bold text-white">Custom Sections</h2>
-          <button @click="addCustomSection" class="text-sm bg-pink-600/20 text-pink-400 hover:bg-pink-600/30 px-3 py-1 rounded-md transition">+ Add Section</button>
-        </div>
-        
-        <div v-if="resume.content.customSections && resume.content.customSections.length === 0" class="text-gray-500 text-sm text-center py-4">
-          Add custom sections for anything else (e.g. Languages, Projects, Certifications).
-        </div>
-
-        <div v-for="(section, index) in resume.content.customSections" :key="index" class="mb-6 p-4 bg-gray-900/50 rounded-lg border border-gray-700 relative group">
-          <button @click="removeCustomSection(index)" class="absolute top-2 right-2 text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition">✕</button>
-          
-          <div class="space-y-4">
-             <input v-model="section.title" placeholder="Section Title (e.g. Projects)" class="bg-transparent text-lg font-bold text-white outline-none placeholder-gray-600 w-full" />
-             <textarea v-model="section.content" placeholder="Content... (Markdown supported)" rows="4" class="w-full bg-gray-800 border-none rounded py-2 px-3 text-white placeholder-gray-600 focus:ring-1 focus:ring-pink-500"></textarea>
-          </div>
-        </div>
-      </section>
-
+    <div v-if="loading" class="flex-1 flex items-center justify-center text-gray-500 font-medium">
+      <div class="animate-pulse flex flex-col items-center gap-4">
+        <div class="w-12 h-12 bg-gray-800 rounded-full"></div>
+        <span>Loading your workspace...</span>
+      </div>
     </div>
+
+    <!-- Main Content Area -->
+    <main v-else class="flex-1 flex overflow-hidden relative">
+      
+      <!-- Left Pane: Editor -->
+      <div 
+        :class="activeTab === 'editor' ? 'flex' : 'hidden'" 
+        class="w-full md:w-1/2 lg:w-5/12 xl:w-[450px] md:flex flex-col border-r border-gray-800 bg-gray-900 relative z-20"
+      >
+        <div class="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
+          
+          <!-- Accordion Sections -->
+          
+          <!-- 1. Settings -->
+          <div class="rounded-xl border border-gray-800 bg-gray-800/20 overflow-hidden">
+            <button @click="toggleSection('settings')" class="w-full p-4 flex justify-between items-center hover:bg-gray-800/40 transition">
+              <div class="flex items-center gap-3">
+                <Settings class="w-5 h-5 text-gray-400" />
+                <span class="font-bold text-gray-200">Settings</span>
+              </div>
+              <ChevronDown class="w-4 h-4 transition-transform duration-300" :class="{ 'rotate-180': openSections.settings }" />
+            </button>
+            <div v-if="openSections.settings" class="p-4 pt-0 border-t border-gray-800/50">
+              <label class="block text-xs font-bold text-gray-500 uppercase mt-4 mb-2">Public URL Slug</label>
+              <div class="flex items-center bg-gray-950 rounded-lg border border-gray-800 focus-within:border-blue-500 transition px-3">
+                <span class="text-gray-600 text-sm">resumax.me/v/</span>
+                <input v-model="resume.slug" class="bg-transparent flex-1 py-2 px-1 text-white text-sm outline-none" />
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. Appearance -->
+          <div class="rounded-xl border border-gray-800 bg-gray-800/20 overflow-hidden">
+            <button @click="toggleSection('theme')" class="w-full p-4 flex justify-between items-center hover:bg-gray-800/40 transition text-left">
+              <div class="flex items-center gap-3">
+                <Palette class="w-5 h-5 text-purple-400" />
+                <span class="font-bold text-gray-200 text-left">Theme & Appearance</span>
+              </div>
+              <ChevronDown class="w-4 h-4 transition-transform duration-300" :class="{ 'rotate-180': openSections.theme }" />
+            </button>
+            <div v-if="openSections.theme" class="p-4 pt-0 border-t border-gray-800/50">
+              <ThemeCustomizer v-model="resume.content.themeConfig" :custom-sections="resume.content.customSections" />
+            </div>
+          </div>
+
+          <!-- 3. Personal Info -->
+          <div class="rounded-xl border border-gray-800 bg-gray-800/20 overflow-hidden">
+            <button @click="toggleSection('personal')" class="w-full p-4 flex justify-between items-center hover:bg-gray-800/40 transition">
+              <div class="flex items-center gap-3">
+                <User class="w-5 h-5 text-blue-400" />
+                <span class="font-bold text-gray-200">Personal Info</span>
+              </div>
+              <ChevronDown class="w-4 h-4 transition-transform duration-300" :class="{ 'rotate-180': openSections.personal }" />
+            </button>
+            <div v-if="openSections.personal" class="p-4 pt-0 border-t border-gray-800/50 space-y-4">
+              <div class="pt-4 flex gap-4">
+                <div class="relative group cursor-pointer" @click="$refs.fileInput.click()">
+                  <div class="w-20 h-20 rounded-xl bg-gray-950 border border-gray-800 flex items-center justify-center overflow-hidden">
+                    <img v-if="resume.content.personalInfo.image" :src="resume.content.personalInfo.image" class="w-full h-full object-cover" />
+                    <ImageIcon v-else class="w-6 h-6 text-gray-700" />
+                  </div>
+                  <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center rounded-xl transition">
+                    <Plus class="w-6 h-6 text-white" />
+                  </div>
+                  <input ref="fileInput" type="file" @change="handleImageUpload" class="hidden" accept="image/*" />
+                </div>
+                <div class="flex-1 space-y-2">
+                  <input v-model="resume.content.personalInfo.name" placeholder="Full Name" class="w-full bg-gray-950 border border-gray-800 rounded-lg py-2 px-3 text-sm focus:border-blue-500 transition outline-none" />
+                  <input v-model="resume.content.personalInfo.title" placeholder="Professional Title" class="w-full bg-gray-950 border border-gray-800 rounded-lg py-2 px-3 text-sm focus:border-blue-500 transition outline-none" />
+                </div>
+              </div>
+              <div class="grid grid-cols-1 gap-2">
+                <input v-model="resume.content.personalInfo.email" placeholder="Email Address" class="bg-gray-950 border border-gray-800 rounded-lg py-2 px-3 text-sm outline-none" />
+                <input v-model="resume.content.personalInfo.phone" placeholder="Phone Number" class="bg-gray-950 border border-gray-800 rounded-lg py-2 px-3 text-sm outline-none" />
+                <input v-model="resume.content.personalInfo.location" placeholder="Location" class="bg-gray-950 border border-gray-800 rounded-lg py-2 px-3 text-sm outline-none" />
+              </div>
+              <textarea v-model="resume.content.personalInfo.bio" placeholder="Bio..." rows="3" class="w-full bg-gray-950 border border-gray-800 rounded-lg py-2 px-3 text-sm outline-none resize-none"></textarea>
+              
+              <div class="space-y-2">
+                <div class="flex justify-between items-center"><span class="text-xs font-bold text-gray-500 uppercase">Social Links</span><button @click="addLink" class="text-blue-500 hover:text-blue-400 text-xs">+ Add</button></div>
+                <div v-for="(link, i) in resume.content.personalInfo.links" :key="i" class="flex gap-2 items-center bg-gray-950 p-2 rounded-lg border border-gray-800">
+                  <IconPicker v-model="link.icon" />
+                  <input v-model="link.platform" placeholder="Web" class="bg-transparent text-xs w-16 outline-none" />
+                  <input v-model="link.url" placeholder="URL" class="bg-transparent flex-1 text-xs outline-none" />
+                  <button @click="removeLink(i)" class="text-gray-600 hover:text-red-500"><Trash2 class="w-3.5 h-3.5" /></button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. Experience -->
+          <div class="rounded-xl border border-gray-800 bg-gray-800/20 overflow-hidden">
+            <button @click="toggleSection('experience')" class="w-full p-4 flex justify-between items-center hover:bg-gray-800/40 transition">
+              <div class="flex items-center gap-3">
+                <Briefcase class="w-5 h-5 text-orange-400" />
+                <span class="font-bold text-gray-200">Experience</span>
+              </div>
+              <ChevronDown class="w-4 h-4 transition-transform duration-300" :class="{ 'rotate-180': openSections.experience }" />
+            </button>
+            <div v-if="openSections.experience" class="p-4 pt-0 border-t border-gray-800/50 space-y-4">
+              <div v-for="(exp, i) in resume.content.experience" :key="i" class="pt-4 border-b border-gray-800/50 pb-4 last:border-0 relative group">
+                <button @click="removeExperience(i)" class="absolute top-2 right-0 text-gray-600 hover:text-red-500 opacity-0 group-hover:opacity-100 transition"><Trash2 class="w-4 h-4" /></button>
+                <div class="flex gap-3 mb-2">
+                  <IconPicker v-model="exp.icon" />
+                  <div class="flex-1 space-y-2">
+                    <input v-model="exp.title" placeholder="Role" class="w-full bg-gray-950 border border-gray-800 rounded-lg py-1.5 px-3 text-sm outline-none" />
+                    <input v-model="exp.company" placeholder="Company" class="w-full bg-gray-950 border border-gray-800 rounded-lg py-1.5 px-3 text-sm outline-none" />
+                  </div>
+                </div>
+                <input v-model="exp.date" placeholder="Duration (e.g. 2020 - 2024)" class="w-full bg-gray-950 border border-gray-800 rounded-lg py-1.5 px-3 text-xs mb-2 outline-none" />
+                <textarea v-model="exp.description" placeholder="Achievements..." rows="2" class="w-full bg-gray-950 border border-gray-800 rounded-lg py-1.5 px-3 text-xs outline-none"></textarea>
+              </div>
+              <button @click="addExperience" class="w-full py-2 border border-dashed border-gray-700 rounded-lg text-gray-500 hover:text-gray-300 transition text-sm flex items-center justify-center gap-2">
+                <PlusCircle class="w-4 h-4" /> Add Experience
+              </button>
+            </div>
+          </div>
+
+          <!-- 5. Education -->
+          <div class="rounded-xl border border-gray-800 bg-gray-800/20 overflow-hidden">
+            <button @click="toggleSection('education')" class="w-full p-4 flex justify-between items-center hover:bg-gray-800/40 transition">
+              <div class="flex items-center gap-3">
+                <GraduationCap class="w-5 h-5 text-teal-400" />
+                <span class="font-bold text-gray-200">Education</span>
+              </div>
+              <ChevronDown class="w-4 h-4 transition-transform duration-300" :class="{ 'rotate-180': openSections.education }" />
+            </button>
+            <div v-if="openSections.education" class="p-4 pt-0 border-t border-gray-800/50 space-y-4">
+              <div v-for="(edu, i) in resume.content.education" :key="i" class="pt-4 border-b border-gray-800/50 pb-4 last:border-0 relative group">
+                <button @click="removeEducation(i)" class="absolute top-2 right-0 text-gray-600 hover:text-red-500 opacity-0 group-hover:opacity-100 transition"><Trash2 class="w-4 h-4" /></button>
+                <div class="flex gap-3 mb-2">
+                  <IconPicker v-model="edu.icon" />
+                  <div class="flex-1 space-y-2">
+                    <input v-model="edu.school" placeholder="University" class="w-full bg-gray-950 border border-gray-800 rounded-lg py-1.5 px-3 text-sm outline-none" />
+                    <input v-model="edu.degree" placeholder="Major" class="w-full bg-gray-950 border border-gray-800 rounded-lg py-1.5 px-3 text-sm outline-none" />
+                  </div>
+                </div>
+                <input v-model="edu.date" placeholder="Year" class="w-full bg-gray-950 border border-gray-800 rounded-lg py-1.5 px-3 text-xs outline-none" />
+              </div>
+              <button @click="addEducation" class="w-full py-2 border border-dashed border-gray-700 rounded-lg text-gray-500 hover:text-gray-300 transition text-sm flex items-center justify-center gap-2">
+                <PlusCircle class="w-4 h-4" /> Add Education
+              </button>
+            </div>
+          </div>
+
+          <!-- 6. Certifications -->
+          <div class="rounded-xl border border-gray-800 bg-gray-800/20 overflow-hidden">
+            <button @click="toggleSection('certifications')" class="w-full p-4 flex justify-between items-center hover:bg-gray-800/40 transition">
+              <div class="flex items-center gap-3">
+                <Award class="w-5 h-5 text-yellow-400" />
+                <span class="font-bold text-gray-200">Certifications</span>
+              </div>
+              <ChevronDown class="w-4 h-4 transition-transform duration-300" :class="{ 'rotate-180': openSections.certifications }" />
+            </button>
+            <div v-if="openSections.certifications" class="p-4 pt-0 border-t border-gray-800/50 space-y-4">
+              <div v-for="(cert, i) in resume.content.certifications" :key="i" class="pt-4 border-b border-gray-800/50 pb-4 last:border-0 relative group">
+                <button @click="removeCertification(i)" class="absolute top-2 right-0 text-gray-600 hover:text-red-500 opacity-0 group-hover:opacity-100 transition"><Trash2 class="w-4 h-4" /></button>
+                <div class="space-y-2">
+                  <input v-model="cert.name" placeholder="Certification Name" class="w-full bg-gray-950 border border-gray-800 rounded-lg py-1.5 px-3 text-sm outline-none" />
+                  <div class="flex gap-2">
+                    <input v-model="cert.issuer" placeholder="Issuer" class="flex-1 bg-gray-950 border border-gray-800 rounded-lg py-1.5 px-3 text-xs outline-none" />
+                    <input v-model="cert.date" placeholder="Year" class="w-20 bg-gray-950 border border-gray-800 rounded-lg py-1.5 px-3 text-xs outline-none" />
+                  </div>
+                  <input v-model="cert.url" placeholder="Link" class="w-full bg-gray-950 border border-gray-800 rounded-lg py-1.5 px-3 text-[10px] outline-none" />
+                </div>
+              </div>
+              <button @click="addCertification" class="w-full py-2 border border-dashed border-gray-700 rounded-lg text-gray-500 hover:text-gray-300 transition text-sm flex items-center justify-center gap-2">
+                <PlusCircle class="w-4 h-4" /> Add Certification
+              </button>
+            </div>
+          </div>
+
+          <!-- 7. Skills -->
+          <div class="rounded-xl border border-gray-800 bg-gray-800/20 overflow-hidden">
+            <button @click="toggleSection('skills')" class="w-full p-4 flex justify-between items-center hover:bg-gray-800/40 transition">
+              <div class="flex items-center gap-3">
+                <Wrench class="w-5 h-5 text-green-400" />
+                <span class="font-bold text-gray-200">Skills</span>
+              </div>
+              <ChevronDown class="w-4 h-4 transition-transform duration-300" :class="{ 'rotate-180': openSections.skills }" />
+            </button>
+            <div v-if="openSections.skills" class="p-4 pt-0 border-t border-gray-800/50 space-y-4">
+              <div v-for="(cat, catIdx) in resume.content.skills" :key="catIdx" class="pt-4 border-b border-gray-800/50 pb-4 last:border-0 relative group">
+                <div class="flex justify-between mb-2">
+                  <input v-model="cat.category" placeholder="Category" class="font-bold bg-transparent outline-none text-xs" />
+                  <button @click="removeSkillCategory(catIdx)" class="text-gray-600 hover:text-red-500"><Trash2 class="w-3.5 h-3.5" /></button>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                  <div v-for="(item, itemIdx) in cat.items" :key="itemIdx" class="flex items-center gap-1 bg-gray-950 border border-gray-800 px-2 py-1 rounded-md group/item transition hover:border-gray-600">
+                    <input v-model="item.name" class="bg-transparent text-[10px] outline-none w-16" />
+                    <button @click="removeSkillItem(catIdx, itemIdx)" class="text-gray-700 hover:text-red-400"><Trash2 class="w-2.5 h-2.5" /></button>
+                  </div>
+                  <button @click="addSkillItem(catIdx)" class="px-2 py-1 border border-dashed border-gray-800 rounded-md text-[10px] text-gray-600 hover:text-gray-400">+</button>
+                </div>
+              </div>
+              <button @click="addSkillCategory" class="w-full py-2 border border-dashed border-gray-700 rounded-lg text-gray-500 hover:text-gray-300 transition text-sm flex items-center justify-center gap-2">
+                <PlusCircle class="w-4 h-4" /> Add Category
+              </button>
+            </div>
+          </div>
+
+          <!-- 8. Custom Sections -->
+          <div class="rounded-xl border border-gray-800 bg-gray-800/20 overflow-hidden">
+            <button @click="toggleSection('custom')" class="w-full p-4 flex justify-between items-center hover:bg-gray-800/40 transition">
+              <div class="flex items-center gap-3">
+                <PlusCircle class="w-5 h-5 text-pink-400" />
+                <span class="font-bold text-gray-200">Custom Sections</span>
+              </div>
+              <ChevronDown class="w-4 h-4 transition-transform duration-300" :class="{ 'rotate-180': openSections.custom }" />
+            </button>
+            <div v-if="openSections.custom" class="p-4 pt-0 border-t border-gray-800/50 space-y-4">
+              <div v-for="(section, i) in resume.content.customSections" :key="i" class="pt-4 border-b border-gray-800/50 pb-4 last:border-0 relative group">
+                <button @click="removeCustomSection(i)" class="absolute top-2 right-0 text-gray-600 hover:text-red-500 opacity-0 group-hover:opacity-100 transition"><Trash2 class="w-4 h-4" /></button>
+                <input v-model="section.title" placeholder="Title" class="w-full bg-gray-950 border border-gray-800 rounded-lg py-1.5 px-3 text-sm font-bold mb-2 outline-none" />
+                <textarea v-model="section.content" placeholder="Content... (Markdown supported)" rows="3" class="w-full bg-gray-950 border border-gray-800 rounded-lg py-1.5 px-3 text-xs outline-none resize-none"></textarea>
+              </div>
+              <button @click="addCustomSection" class="w-full py-2 border border-dashed border-gray-700 rounded-lg text-gray-500 hover:text-gray-300 transition text-sm">
+                + Add Custom Section
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Right Pane: Preview -->
+      <div 
+        :class="activeTab === 'preview' ? 'fixed inset-0 top-14 bg-gray-950' : 'hidden'" 
+        class="flex-1 md:flex md:static flex-col bg-gray-200/5 overflow-hidden transition-all duration-300"
+      >
+        <div class="h-full w-full overflow-y-auto custom-scrollbar p-6 lg:p-12">
+          <div class="max-w-[800px] mx-auto shadow-2xl origin-top scale-[0.85] lg:scale-100 transition-transform duration-500">
+             <DynamicTheme :resume="resume" class="pointer-events-none" />
+          </div>
+        </div>
+      </div>
+
+    </main>
   </div>
 </template>
+
+<style scoped>
+.custom-scrollbar::-webkit-scrollbar { width: 5px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #374151; border-radius: 10px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #4b5563; }
+</style>

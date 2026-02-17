@@ -24,7 +24,7 @@ const defaultConfig = {
   },
   font: 'Inter',
   layout: 'full-width',
-  sectionOrder: ['bio', 'experience', 'education', 'skills'],
+  sectionOrder: ['bio', 'experience', 'education', 'certifications', 'skills'],
   borderRadius: 'rounded',
   showIcons: true
 }
@@ -299,6 +299,29 @@ const renderSection = (sectionId) => {
                           {{ item.name }}
                         </span>
                       </div>
+                    </div>
+                  </div>
+                </section>
+
+                <section v-else-if="renderSection(section).type === 'certifications'">
+                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 section-title-sm">Certifications</h3>
+                  <div class="space-y-3">
+                    <div v-for="(cert, index) in renderSection(section).data" :key="index">
+                      <div class="font-bold text-primary text-sm">{{ cert.name }}</div>
+                      <div class="text-xs text-accent">{{ cert.issuer }}</div>
+                      <div class="text-xs text-secondary">{{ cert.date }}</div>
+                    </div>
+                  </div>
+                </section>
+
+                <section v-else-if="renderSection(section).type === 'certifications'">
+                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 section-title-sm">Certifications</h3>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div v-for="(cert, index) in renderSection(section).data" :key="index" class="bg-surface p-4 rounded-lg border border-gray-200">
+                      <h4 class="font-bold text-primary">{{ cert.name }}</h4>
+                      <div class="text-accent text-sm font-medium">{{ cert.issuer }}</div>
+                      <div class="text-secondary text-xs mt-1">{{ cert.date }}</div>
+                      <a v-if="cert.url" :href="cert.url" target="_blank" class="text-xs text-blue-500 hover:underline mt-1 inline-block">View Credential ↗</a>
                     </div>
                   </div>
                 </section>
