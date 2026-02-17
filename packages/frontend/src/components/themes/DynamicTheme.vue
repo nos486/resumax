@@ -30,15 +30,39 @@ const defaultConfig = {
 }
 
 const config = computed(() => {
-  return { 
+  const merged = { 
     ...defaultConfig, 
-    ...(props.resume.content?.themeConfig || {}),
-    // Ensure columnAssignment exists
-    columnAssignment: props.resume.content?.themeConfig?.columnAssignment || {
-      leftColumn: ['bio', 'skills'],
-      rightColumn: ['experience', 'education']
+    ...(props.resume.content?.themeConfig || {})
+  }
+  
+  // Robustness: Always ensure certifications is in sectionOrder if data exists
+  if (props.resume.content?.certifications?.length > 0 && !merged.sectionOrder.includes('certifications')) {
+    const eduIdx = merged.sectionOrder.indexOf('education')
+    if (eduIdx > -1) {
+      merged.sectionOrder.splice(eduIdx + 1, 0, 'certifications')
+    } else {
+      merged.sectionOrder.push('certifications')
     }
   }
+
+  // Ensure columnAssignment exists and includes certifications
+  if (!merged.columnAssignment) {
+    merged.columnAssignment = {
+      leftColumn: ['bio', 'skills', 'certifications'],
+      rightColumn: ['experience', 'education']
+    }
+  } else {
+    // Ensure certifications is in one of the columns if it exists
+    if (props.resume.content?.certifications?.length > 0) {
+      const inColumns = merged.columnAssignment.leftColumn.includes('certifications') || 
+                        merged.columnAssignment.rightColumn.includes('certifications')
+      if (!inColumns) {
+        merged.columnAssignment.leftColumn.push('certifications')
+      }
+    }
+  }
+
+  return merged
 })
 
 const cssVars = computed(() => ({
@@ -163,6 +187,7 @@ const renderSection = (sectionId) => {
 
             <section v-else-if="renderSection(section).type === 'skills'">
               <h2 class="section-heading">Skills</h2>
+              <!-- Categorized format -->
               <div v-if="renderSection(section).data[0]?.items" class="space-y-6">
                 <div v-for="(cat, i) in renderSection(section).data" :key="i">
                   <h3 class="text-lg font-semibold text-primary mb-2">{{ cat.category }}</h3>
@@ -173,6 +198,13 @@ const renderSection = (sectionId) => {
                     </span>
                   </div>
                 </div>
+              </div>
+              <!-- Legacy flat format -->
+              <div v-else class="flex flex-wrap gap-2">
+                <span v-for="(item, j) in renderSection(section).data" :key="j" class="skill-badge">
+                  <component :is="renderIcon(item.icon)" v-if="config.showIcons && item.icon" class="w-3 h-3" />
+                  {{ item.name || item }}
+                </span>
               </div>
             </section>
 
@@ -299,17 +331,6 @@ const renderSection = (sectionId) => {
                           {{ item.name }}
                         </span>
                       </div>
-                    </div>
-                  </div>
-                </section>
-
-                <section v-else-if="renderSection(section).type === 'certifications'">
-                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 section-title-sm">Certifications</h3>
-                  <div class="space-y-3">
-                    <div v-for="(cert, index) in renderSection(section).data" :key="index">
-                      <div class="font-bold text-primary text-sm">{{ cert.name }}</div>
-                      <div class="text-xs text-accent">{{ cert.issuer }}</div>
-                      <div class="text-xs text-secondary">{{ cert.date }}</div>
                     </div>
                   </div>
                 </section>
