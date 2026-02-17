@@ -248,7 +248,7 @@ function removeCustomSection(index) {
       <!-- Theme Customization -->
       <section class="bg-gray-800 rounded-xl p-6 border border-gray-700 shadow-md">
         <h2 class="text-xl font-bold text-white mb-4 border-b border-gray-700 pb-2">Theme Customization</h2>
-        <ThemeCustomizer v-model="resume.content.themeConfig" />
+        <ThemeCustomizer v-model="resume.content.themeConfig" :custom-sections="resume.content.customSections" />
       </section>
 
       <!-- Personal Info -->

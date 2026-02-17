@@ -2,7 +2,8 @@
 import { reactive, watch } from 'vue'
 
 const props = defineProps({
-  modelValue: Object
+  modelValue: Object,
+  customSections: { type: Array, default: () => [] }
 })
 
 const emit = defineEmits(['update:modelValue'])
@@ -161,8 +162,7 @@ function applyPreset(presetName) {
   }
   
   // Reset layouts defaults
-  config.layout = preset.layout === '1-column' ? '1-column' : '1-column' // All presets default to 1-col for now to be safe, or logic can be improved
-  if (presetName === 'professional') config.layout = '2-column'
+  config.layout = preset.layout || '1-column'
   
   config.sectionOrder = ['bio', 'experience', 'education', 'skills']
   config.columnAssignment = {
@@ -181,7 +181,10 @@ const availableSections = [
 function getSectionLabel(id) {
   const builtin = availableSections.find(s => s.id === id)
   if (builtin) return builtin.label
-  if (id.startsWith('custom-')) return 'Custom Section'
+  if (id.startsWith('custom-') && props.customSections) {
+    const custom = props.customSections.find(s => s.id === id)
+    if (custom) return custom.title || 'Untitled Section'
+  }
   return id
 }
 
