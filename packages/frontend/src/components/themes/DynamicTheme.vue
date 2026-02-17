@@ -274,13 +274,13 @@ const renderSection = (sectionId) => {
                   <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 section-title-sm">Skills</h3>
                   <div v-if="renderSection(section).data[0]?.items" class="space-y-4">
                     <div v-for="(cat, i) in renderSection(section).data" :key="i">
-                      <h4 class="text-xs font-bold text-secondary uppercase mb-2">{{ cat.category }}</h4>
-                      <ul class="text-sm text-content space-y-1">
-                        <li v-for="(item, j) in cat.items" :key="j" class="flex items-center gap-2">
-                          <span class="w-1.5 h-1.5 bg-accent rounded-full"></span>
+                      <h4 class="text-xs font-bold text-primary mb-2">{{ cat.category }}</h4>
+                      <div class="flex flex-wrap gap-2">
+                        <span v-for="(item, j) in cat.items" :key="j" class="skill-badge text-xs">
+                          <component :is="renderIcon(item.icon)" v-if="config.showIcons && item.icon" class="w-3 h-3" />
                           {{ item.name }}
-                        </li>
-                      </ul>
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </section>
@@ -312,10 +312,14 @@ const renderSection = (sectionId) => {
                 <section v-if="renderSection(section).type === 'experience'">
                   <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-4 section-title-sm">Experience</h3>
                   <div class="space-y-6">
-                    <div v-for="(exp, index) in renderSection(section).data" :key="index">
-                      <div class="flex justify-between items-baseline mb-1">
-                        <h4 class="text-lg font-bold text-primary">{{ exp.title }}</h4>
-                        <span class="text-sm text-secondary">{{ exp.date }}</span>
+                    <div v-for="(exp, index) in renderSection(section).data" :key="index" class="relative pl-6 border-l-2 border-accent">
+                      <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full accent-dot"></div>
+                      <div class="flex flex-col sm:flex-row sm:justify-between sm:items-baseline mb-1">
+                        <h4 class="text-lg font-bold text-primary flex items-center gap-2">
+                          <component :is="renderIcon(exp.icon)" v-if="config.showIcons && exp.icon" class="w-4 h-4" />
+                          {{ exp.title }}
+                        </h4>
+                        <span class="text-sm text-secondary font-medium">{{ exp.date }}</span>
                       </div>
                       <div class="text-accent font-semibold mb-2">{{ exp.company }}</div>
                       <p class="text-content text-sm leading-relaxed whitespace-pre-line">{{ exp.description }}</p>
