@@ -15,6 +15,8 @@ window.onCaptchaVerified = (token) => {
 
 const captchaToken = ref('')
 
+const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY || '0x4AAAAAAA-placeholder'
+
 async function handleRegister() {
   if (!captchaToken.value) {
     toast.error('Please complete the captcha')
@@ -63,7 +65,7 @@ async function handleRegister() {
         </div>
 
         <div class="flex justify-center py-2">
-           <div class="cf-turnstile" data-sitekey="0x4AAAAAAA-placeholder" data-callback="onCaptchaVerified"></div>
+           <div class="cf-turnstile" :data-sitekey="siteKey" data-callback="onCaptchaVerified"></div>
         </div>
 
         <button 
