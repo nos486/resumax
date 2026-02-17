@@ -11,7 +11,8 @@ const resume = ref(null)
 const themes = {
   modern: defineAsyncComponent(() => import('../components/themes/ModernTheme.vue')),
   professional: defineAsyncComponent(() => import('../components/themes/ProfessionalTheme.vue')),
-  // fallback for minimal or others to modern for now
+  creative: defineAsyncComponent(() => import('../components/themes/CreativeTheme.vue')),
+  // fallback
   minimal: defineAsyncComponent(() => import('../components/themes/ModernTheme.vue')), 
 }
 

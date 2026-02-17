@@ -148,8 +148,9 @@ function removeSkillItem(categoryIndex, itemIndex) {
             <label class="block text-gray-400 mb-1 text-sm">Theme</label>
             <select v-model="resume.theme" class="w-full bg-gray-900 border border-gray-700 rounded-lg py-2 px-3 text-white outline-none">
               <option value="modern">Modern Dark</option>
-              <option value="minimal">Minimal Light</option>
               <option value="professional">Professional</option>
+              <option value="creative">Creative Teal</option>
+              <option value="minimal">Minimal Light</option>
             </select>
           </div>
         </div>
