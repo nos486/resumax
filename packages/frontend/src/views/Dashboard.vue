@@ -21,6 +21,14 @@ const resume = reactive({
     experience: [],
     education: [],
     skills: [] // Now array of categories: { category: 'Frontend', items: [{ name: 'Vue', icon: 'Smile' }] }
+  },
+  customization: {
+    colors: {
+      primary: '#2563eb',
+      background: '#ffffff',
+      text: '#1f2937'
+    },
+    layout: ['summary', 'experience', 'education', 'skills']
   }
 })
 
@@ -33,6 +41,16 @@ onMounted(async () => {
       // Merge content to ensure structure exists
       if (data.content) {
         resume.content = { ...resume.content, ...data.content }
+      }
+      // Merge customization
+      if (data.customization) {
+        resume.customization = { ...resume.customization, ...data.customization }
+      } else {
+        // Defaults if missing
+         resume.customization = {
+            colors: { primary: '#2563eb', background: '#ffffff', text: '#1f2937' },
+            layout: ['summary', 'experience', 'education', 'skills']
+         }
       }
     }
   } catch (e) {
@@ -48,7 +66,8 @@ async function saveResume() {
     await api.updateResume({
       slug: resume.slug,
       theme: resume.theme,
-      content: resume.content
+      content: resume.content,
+      customization: resume.customization
     })
     toast.success('Resume saved successfully!')
   } catch (e) {
@@ -110,6 +129,22 @@ function handleImageUpload(event) {
     img.src = e.target.result
   }
   reader.readAsDataURL(file)
+}
+
+// Layout Reordering
+function moveSectionUp(index) {
+  if (index > 0) {
+    const item = resume.customization.layout[index]
+    resume.customization.layout.splice(index, 1)
+    resume.customization.layout.splice(index - 1, 0, item)
+  }
+}
+function moveSectionDown(index) {
+  if (index < resume.customization.layout.length - 1) {
+    const item = resume.customization.layout[index]
+    resume.customization.layout.splice(index, 1)
+    resume.customization.layout.splice(index + 1, 0, item)
+  }
 }
 
 // Links
@@ -199,6 +234,45 @@ function removeSkillItem(categoryIndex, itemIndex) {
               <option value="professional">Professional</option>
             </select>
           </div>
+        </div>
+
+        <!-- Customization -->
+        <div class="mt-6 pt-4 border-t border-gray-700">
+           <h3 class="text-lg font-semibold text-white mb-3">Theme Customization</h3>
+           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+             <!-- Colors -->
+             <div>
+                <label class="block text-gray-400 mb-2 text-sm">Colors</label>
+                <div class="space-y-3">
+                   <div class="flex items-center justify-between bg-gray-900 p-2 rounded border border-gray-700">
+                      <span class="text-sm text-gray-300">Primary Color</span>
+                      <input v-model="resume.customization.colors.primary" type="color" class="bg-transparent border-none w-8 h-8 cursor-pointer" />
+                   </div>
+                   <div class="flex items-center justify-between bg-gray-900 p-2 rounded border border-gray-700">
+                      <span class="text-sm text-gray-300">Background Color</span>
+                      <input v-model="resume.customization.colors.background" type="color" class="bg-transparent border-none w-8 h-8 cursor-pointer" />
+                   </div>
+                   <div class="flex items-center justify-between bg-gray-900 p-2 rounded border border-gray-700">
+                      <span class="text-sm text-gray-300">Text Color</span>
+                      <input v-model="resume.customization.colors.text" type="color" class="bg-transparent border-none w-8 h-8 cursor-pointer" />
+                   </div>
+                </div>
+             </div>
+             
+             <!-- Layout -->
+             <div>
+                <label class="block text-gray-400 mb-2 text-sm">Section Order</label>
+                <div class="space-y-2">
+                   <div v-for="(section, index) in resume.customization.layout" :key="section" class="flex items-center justify-between bg-gray-900 p-2 rounded border border-gray-700">
+                      <span class="text-sm text-white capitalize">{{ section }}</span>
+                      <div class="flex gap-1">
+                         <button @click="moveSectionUp(index)" :disabled="index === 0" class="px-2 py-1 bg-gray-700 rounded hover:bg-gray-600 disabled:opacity-30 text-xs">↑</button>
+                         <button @click="moveSectionDown(index)" :disabled="index === resume.customization.layout.length - 1" class="px-2 py-1 bg-gray-700 rounded hover:bg-gray-600 disabled:opacity-30 text-xs">↓</button>
+                      </div>
+                   </div>
+                </div>
+             </div>
+           </div>
         </div>
       </section>
 

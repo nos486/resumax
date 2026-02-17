@@ -1,4 +1,5 @@
 <script setup>
+import { computed } from 'vue'
 import * as icons from 'lucide-vue-next'
 
 const props = defineProps({
@@ -9,14 +10,27 @@ const renderIcon = (name) => {
     if (!name || !icons[name]) return null
     return icons[name]
 }
+
+const themeStyles = computed(() => {
+  const colors = props.resume?.customization?.colors || {}
+  return {
+    '--primary': colors.primary || '#2563eb',
+    '--bg': colors.background || '#ffffff',
+    '--text': colors.text || '#1f2937'
+  }
+})
+
+const layoutOrder = computed(() => {
+  return props.resume?.customization?.layout || ['summary', 'experience', 'education', 'skills']
+})
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8 font-sans text-gray-800">
+  <div class="min-h-screen py-12 px-4 sm:px-6 lg:px-8 font-sans" :style="themeStyles" style="background-color: var(--bg); color: var(--text);">
     <div class="max-w-4xl mx-auto bg-white shadow-xl rounded-2xl overflow-hidden">
       
       <!-- Header -->
-      <header class="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-8">
+      <header class="text-white p-8" style="background: linear-gradient(to right, var(--primary), #8b5cf6);">
         <div class="flex flex-col md:flex-row items-center gap-6">
             <img v-if="resume.content.personalInfo.image" :src="resume.content.personalInfo.image" class="w-24 h-24 rounded-full border-4 border-white/30 object-cover shadow-sm" />
             <div class="text-center md:text-left">
@@ -46,76 +60,77 @@ const renderIcon = (name) => {
 
       <div class="p-8 space-y-8">
         
-        <!-- Bio -->
-        <section v-if="resume.content.personalInfo.bio">
-          <h2 class="text-2xl font-bold text-gray-800 mb-3 border-b pb-2 border-gray-200">About Me</h2>
-          <p class="text-gray-600 leading-relaxed">{{ resume.content.personalInfo.bio }}</p>
-        </section>
+        <template v-for="section in layoutOrder" :key="section">
+            
+            <!-- Bio / Summary -->
+            <section v-if="section === 'summary' && resume.content.personalInfo.bio">
+              <h2 class="text-2xl font-bold mb-3 border-b pb-2" style="border-color: #e5e7eb; color: var(--text);">About Me</h2>
+              <p class="leading-relaxed opacity-90">{{ resume.content.personalInfo.bio }}</p>
+            </section>
 
-        <!-- Experience -->
-        <section v-if="resume.content.experience?.length">
-          <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2 border-gray-200">Experience</h2>
-          <div class="space-y-6">
-            <div v-for="(exp, index) in resume.content.experience" :key="index" class="relative pl-6 border-l-2 border-blue-200">
-               <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center">
-                   <div class="w-2 h-2 bg-white rounded-full"></div>
-               </div>
-               <div class="flex flex-col sm:flex-row sm:justify-between sm:items-baseline mb-1">
-                 <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
-                     <component :is="renderIcon(exp.icon)" v-if="exp.icon" class="w-4 h-4 text-blue-600" />
-                     {{ exp.title }}
-                 </h3>
-                 <span class="text-sm text-gray-500 font-medium">{{ exp.date }}</span>
-               </div>
-               <div class="text-blue-600 font-medium mb-2">{{ exp.company }}</div>
-               <p class="text-gray-600 text-sm whitespace-pre-line">{{ exp.description }}</p>
-            </div>
-          </div>
-        </section>
+            <!-- Experience -->
+            <section v-if="section === 'experience' && resume.content.experience?.length">
+              <h2 class="text-2xl font-bold mb-4 border-b pb-2" style="border-color: #e5e7eb; color: var(--text);">Experience</h2>
+              <div class="space-y-6">
+                <div v-for="(exp, index) in resume.content.experience" :key="index" class="relative pl-6 border-l-2 border-blue-200">
+                   <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full flex items-center justify-center" style="background-color: var(--primary);">
+                       <div class="w-2 h-2 bg-white rounded-full"></div>
+                   </div>
+                   <div class="flex flex-col sm:flex-row sm:justify-between sm:items-baseline mb-1">
+                     <h3 class="text-lg font-bold flex items-center gap-2" style="color: var(--text);">
+                         <component :is="renderIcon(exp.icon)" v-if="exp.icon" class="w-4 h-4" style="color: var(--primary);" />
+                         {{ exp.title }}
+                     </h3>
+                     <span class="text-sm opacity-70 font-medium">{{ exp.date }}</span>
+                   </div>
+                   <div class="font-medium mb-2" style="color: var(--primary);">{{ exp.company }}</div>
+                   <p class="text-sm leading-relaxed whitespace-pre-line opacity-80" style="color: var(--text);">{{ exp.description }}</p>
+                </div>
+              </div>
+            </section>
 
-        <!-- Education -->
-        <section v-if="resume.content.education?.length">
-          <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2 border-gray-200">Education</h2>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div v-for="(edu, index) in resume.content.education" :key="index" class="bg-gray-50 p-4 rounded-lg border border-gray-100 hover:shadow-md transition">
-              <h3 class="font-bold text-gray-900 flex items-center gap-2">
-                  <component :is="renderIcon(edu.icon)" v-if="edu.icon" class="w-4 h-4 text-purple-600" />
-                  {{ edu.school }}
-              </h3>
-              <div class="text-gray-600 text-sm">{{ edu.degree }}</div>
-              <div class="text-gray-400 text-xs mt-1">{{ edu.date }}</div>
-            </div>
-          </div>
-        </section>
+            <!-- Education -->
+            <section v-if="section === 'education' && resume.content.education?.length">
+              <h2 class="text-2xl font-bold mb-4 border-b pb-2" style="border-color: #e5e7eb; color: var(--text);">Education</h2>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div v-for="(edu, index) in resume.content.education" :key="index" class="bg-gray-50 p-4 rounded-lg border border-gray-100 hover:shadow-md transition">
+                  <h3 class="font-bold flex items-center gap-2" style="color: var(--text);">
+                      <component :is="renderIcon(edu.icon)" v-if="edu.icon" class="w-4 h-4" style="color: var(--primary);" />
+                      {{ edu.school }}
+                  </h3>
+                  <div class="text-sm opacity-80" style="color: var(--text);">{{ edu.degree }}</div>
+                  <div class="text-xs mt-1 opacity-60">{{ edu.date }}</div>
+                </div>
+              </div>
+            </section>
 
-        <!-- Skills -->
-        <section v-if="resume.content.skills?.length">
-          <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2 border-gray-200">Skills</h2>
-          
-           <!-- Handle new category format -->
-           <div v-if="resume.content.skills[0].items" class="space-y-6">
-               <div v-for="(cat, i) in resume.content.skills" :key="i">
-                   <h3 class="text-lg font-semibold text-gray-700 mb-2">{{ cat.category }}</h3>
-                   <div class="flex flex-wrap gap-2">
-                        <span v-for="(item, j) in cat.items" :key="j" class="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm font-medium border border-blue-100 flex items-center gap-1">
-                            <component :is="renderIcon(item.icon)" v-if="item.icon" class="w-3 h-3" />
-                            {{ item.name }}
-                        </span>
+            <!-- Skills -->
+            <section v-if="section === 'skills' && resume.content.skills?.length">
+              <h2 class="text-2xl font-bold mb-4 border-b pb-2" style="border-color: #e5e7eb; color: var(--text);">Skills</h2>
+              
+               <div v-if="resume.content.skills[0].items" class="space-y-6">
+                   <div v-for="(cat, i) in resume.content.skills" :key="i">
+                       <h3 class="text-lg font-semibold mb-2 opacity-90" style="color: var(--text);">{{ cat.category }}</h3>
+                       <div class="flex flex-wrap gap-2">
+                            <span v-for="(item, j) in cat.items" :key="j" class="px-3 py-1 rounded-full text-sm font-medium border flex items-center gap-1" style="background-color: #eff6ff; color: var(--primary); border-color: #dbeafe;">
+                                <component :is="renderIcon(item.icon)" v-if="item.icon" class="w-3 h-3" />
+                                {{ item.name }}
+                            </span>
+                       </div>
                    </div>
                </div>
-           </div>
+               <div v-else class="flex flex-wrap gap-2">
+                 <span v-for="(skill, index) in resume.content.skills" :key="index" class="px-3 py-1 rounded-full text-sm font-medium border" style="background-color: #eff6ff; color: var(--primary); border-color: #dbeafe;">
+                  {{ skill.name }}
+                 </span>
+               </div>
+            </section>
 
-           <!-- Fallback for old flat format -->
-           <div v-else class="flex flex-wrap gap-2">
-            <span v-for="(skill, index) in resume.content.skills" :key="index" class="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm font-medium border border-blue-100">
-              {{ skill.name }}
-            </span>
-          </div>
-        </section>
+        </template>
 
       </div>
     </div>
-    <div class="text-center mt-8 text-gray-400 text-sm">
+    <div class="text-center mt-8 text-sm opacity-50">
       Built with <a href="/" class="text-blue-500 hover:underline">Resumax</a>
     </div>
   </div>

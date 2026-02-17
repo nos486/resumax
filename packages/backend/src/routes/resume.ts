@@ -13,15 +13,17 @@ resume.get('/', async (c) => {
     ).bind(user.id).first()
 
     if (!resume) {
-        return c.json({ message: 'Resume not found', data: null }) // Or return empty object
+        return c.json({ message: 'Resume not found', data: null })
     }
 
-    // Parse content if it's a string, or it might be returned as JSON if stored as JSON type in D1 (but schema says TEXT)
-    // SQLite stores JSON as TEXT, so implementation needs to parse it if needed, or just return as is if client handles parsing?
-    // Hono D1 binding usually returns as is. Better to valid JSON parse it just in case.
     try {
         if (typeof resume.content === 'string') {
             resume.content = JSON.parse(resume.content)
+        }
+        if (typeof resume.customization === 'string') {
+            resume.customization = JSON.parse(resume.customization)
+        } else if (!resume.customization) {
+            resume.customization = {}
         }
     } catch (e) { }
 
@@ -30,23 +32,21 @@ resume.get('/', async (c) => {
 
 resume.put('/', async (c) => {
     const user = c.get('user')
-    const { content, theme, slug } = await c.req.json()
-
-    // Validate slug uniqueness if changed?
-    // For simplicity, slug is set once or updated.
-    // If resume doesn't exist, create it.
+    const { content, theme, slug, customization } = await c.req.json()
 
     const existing = await c.env.DB.prepare(
         'SELECT id FROM resumes WHERE user_id = ?'
     ).bind(user.id).first()
 
+    const contentJson = JSON.stringify(content || {})
+    const customizationJson = JSON.stringify(customization || {})
+
     let result
     if (existing) {
         result = await c.env.DB.prepare(
-            'UPDATE resumes SET content = ?, theme = ?, slug = ?, updated_at = unixepoch() WHERE user_id = ?'
-        ).bind(JSON.stringify(content), theme, slug, user.id).run()
+            'UPDATE resumes SET content = ?, customization = ?, theme = ?, slug = ?, updated_at = unixepoch() WHERE user_id = ?'
+        ).bind(contentJson, customizationJson, theme, slug, user.id).run()
     } else {
-        // Check slug uniqueness across all users
         const slugCheck = await c.env.DB.prepare(
             'SELECT id FROM resumes WHERE slug = ?'
         ).bind(slug).first()
@@ -56,8 +56,8 @@ resume.put('/', async (c) => {
         }
 
         result = await c.env.DB.prepare(
-            'INSERT INTO resumes (user_id, slug, content, theme) VALUES (?, ?, ?, ?)'
-        ).bind(user.id, slug, JSON.stringify(content), theme || 'modern').run()
+            'INSERT INTO resumes (user_id, slug, content, customization, theme) VALUES (?, ?, ?, ?, ?)'
+        ).bind(user.id, slug, contentJson, customizationJson, theme || 'modern').run()
     }
 
     if (!result.success) {

@@ -14,6 +14,7 @@ CREATE TABLE resumes (
     user_id INTEGER NOT NULL,
     slug TEXT NOT NULL UNIQUE,
     content TEXT DEFAULT '{}', -- JSON string of resume data
+    customization TEXT DEFAULT '{}', -- JSON string of customization data
     theme TEXT DEFAULT 'modern',
     updated_at INTEGER DEFAULT (unixepoch()),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
