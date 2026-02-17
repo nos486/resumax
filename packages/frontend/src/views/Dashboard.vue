@@ -484,9 +484,9 @@ function removeCustomSection(index) {
           </div>
         </div>
 
-        <div class="flex-1 overflow-y-auto custom-scrollbar bg-[radial-gradient(#ffffff05_1px,transparent_1px)] [background-size:20px_20px]">
-          <div class="min-h-full flex justify-center">
-            <div class="w-full shadow-2xl origin-top hover:scale-[1.005] transition-transform duration-500">
+        <div class="flex-1 overflow-y-auto custom-scrollbar" :style="{ backgroundColor: resume.content?.themeConfig?.colors?.background || '#f3f4f6' }">
+          <div class="min-h-full py-8 px-4 flex justify-center items-start">
+            <div class="w-full max-w-5xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] overflow-hidden ring-1 ring-black/5 bg-white transition-all duration-300">
                <DynamicTheme :resume="resume" class="pointer-events-none" />
             </div>
           </div>
