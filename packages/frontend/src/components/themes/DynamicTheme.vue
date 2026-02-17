@@ -189,12 +189,12 @@ const renderSection = (sectionId) => {
             <template v-for="section in config.columnAssignment.leftColumn" :key="section">
               <component :is="'div'" v-if="renderSection(section)">
                 <section v-if="renderSection(section).type === 'bio'" class="mb-6">
-                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 text-primary">About</h3>
+                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 section-title-sm">About</h3>
                   <p class="text-sm leading-relaxed text-content">{{ renderSection(section).data }}</p>
                 </section>
 
                 <section v-else-if="renderSection(section).type === 'education'" class="mb-6">
-                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 text-primary">Education</h3>
+                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 section-title-sm">Education</h3>
                   <div class="space-y-4">
                     <div v-for="(edu, index) in renderSection(section).data" :key="index">
                       <div class="font-bold text-primary text-sm">{{ edu.school }}</div>
@@ -205,7 +205,7 @@ const renderSection = (sectionId) => {
                 </section>
 
                 <section v-else-if="renderSection(section).type === 'skills'" class="mb-6">
-                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 text-primary">Skills</h3>
+                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 section-title-sm">Skills</h3>
                   <div v-if="renderSection(section).data[0]?.items" class="space-y-4">
                     <div v-for="(cat, i) in renderSection(section).data" :key="i">
                       <h4 class="text-xs font-bold text-secondary uppercase mb-2">{{ cat.category }}</h4>
@@ -220,7 +220,7 @@ const renderSection = (sectionId) => {
                 </section>
 
                 <section v-else-if="renderSection(section).type === 'custom'" class="mb-6">
-                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 text-primary">{{ renderSection(section).data.title }}</h3>
+                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 section-title-sm">{{ renderSection(section).data.title }}</h3>
                   <div class="text-sm text-content leading-relaxed whitespace-pre-line">{{ renderSection(section).data.content }}</div>
                 </section>
               </component>
@@ -232,7 +232,7 @@ const renderSection = (sectionId) => {
             <template v-for="section in config.columnAssignment.rightColumn" :key="section">
               <component :is="'div'" v-if="renderSection(section)">
                 <section v-if="renderSection(section).type === 'experience'">
-                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-4 text-primary">Experience</h3>
+                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-4 section-title-sm">Experience</h3>
                   <div class="space-y-6">
                     <div v-for="(exp, index) in renderSection(section).data" :key="index">
                       <div class="flex justify-between items-baseline mb-1">
@@ -246,12 +246,12 @@ const renderSection = (sectionId) => {
                 </section>
 
                 <section v-else-if="renderSection(section).type === 'bio'">
-                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 text-primary">About</h3>
+                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 section-title-sm">About</h3>
                   <p class="text-content leading-relaxed">{{ renderSection(section).data }}</p>
                 </section>
 
                 <section v-else-if="renderSection(section).type === 'education'">
-                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 text-primary">Education</h3>
+                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 section-title-sm">Education</h3>
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div v-for="(edu, index) in renderSection(section).data" :key="index" class="bg-surface p-4 rounded-lg border border-gray-200">
                       <h4 class="font-bold text-primary">{{ edu.school }}</h4>
@@ -262,7 +262,7 @@ const renderSection = (sectionId) => {
                 </section>
 
                 <section v-else-if="renderSection(section).type === 'skills'">
-                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 text-primary">Skills</h3>
+                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 section-title-sm">Skills</h3>
                   <div v-if="renderSection(section).data[0]?.items" class="space-y-6">
                     <div v-for="(cat, i) in renderSection(section).data" :key="i">
                       <h4 class="text-lg font-semibold text-primary mb-2">{{ cat.category }}</h4>
@@ -277,7 +277,7 @@ const renderSection = (sectionId) => {
                 </section>
 
                 <section v-else-if="renderSection(section).type === 'custom'">
-                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 text-primary">{{ renderSection(section).data.title }}</h3>
+                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 section-title-sm">{{ renderSection(section).data.title }}</h3>
                   <div class="text-content leading-relaxed whitespace-pre-line">{{ renderSection(section).data.content }}</div>
                 </section>
               </component>
@@ -313,10 +313,15 @@ const renderSection = (sectionId) => {
 .section-heading {
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--color-text);
+  color: var(--color-section-title);
   margin-bottom: 1rem;
   padding-bottom: 0.5rem;
-  border-bottom: 2px solid var(--color-primary);
+  border-bottom: 2px solid var(--color-section-title);
+}
+
+.section-title-sm {
+  color: var(--color-section-title);
+  border-color: var(--color-section-title);
 }
 
 .text-content {

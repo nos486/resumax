@@ -33,10 +33,11 @@ const resume = reactive({
         surface: '#ffffff',
         text: '#1f2937',
         textSecondary: '#6b7280',
-        accent: '#3b82f6'
+        accent: '#3b82f6',
+        sectionTitle: '#3b82f6'
       },
       font: 'Inter',
-      layout: 'full-width',
+      layout: '1-column',
       sectionOrder: ['bio', 'experience', 'education', 'skills'],
       borderRadius: 'rounded',
       showIcons: true
