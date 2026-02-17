@@ -27,6 +27,15 @@ Resumax is a premium online CV maker built with Vue 3, Cloudflare Workers, and D
      VITE_API_URL=http://localhost:8787/api
      ```
 
+## Cloudflare Turnstile Setup (Captcha)
+
+To enable bot protection on Login and Register pages:
+
+1. **Obtain Keys**: Go to [Cloudflare Dashboard](https://dash.cloudflare.com/) > **Turnstile** and create a new widget for your domain.
+2. **Frontend Config**: Update the `data-sitekey` in `packages/frontend/src/views/Login.vue` and `Register.vue` with your **Site Key**.
+3. **Backend Config**: Add `TURNSTILE_SECRET_KEY` to your backend environment variables (Cloudflare Dashboard > Workers > Settings > Variables) with your **Secret Key**.
+   - For local development, add it to `packages/backend/.dev.vars`.
+
 3. **Run Development Servers**
    ```bash
    npm run dev
