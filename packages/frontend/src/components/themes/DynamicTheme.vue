@@ -75,6 +75,9 @@ const renderSection = (sectionId) => {
   if (section === 'skills' && content.skills?.length) {
     return { type: 'skills', data: content.skills }
   }
+  if (section === 'certifications' && content.certifications?.length) {
+    return { type: 'certifications', data: content.certifications }
+  }
   if (section.startsWith('custom-') && content.customSections) {
     const customSection = content.customSections.find(s => s.id === section)
     if (customSection) {
@@ -173,6 +176,18 @@ const renderSection = (sectionId) => {
               </div>
             </section>
 
+            <section v-else-if="renderSection(section).type === 'certifications'">
+              <h2 class="section-heading">Licenses & Certifications</h2>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div v-for="(cert, index) in renderSection(section).data" :key="index" class="bg-surface p-4 rounded-lg border border-gray-200">
+                   <h3 class="font-bold text-primary">{{ cert.name }}</h3>
+                   <div class="text-accent text-sm font-medium">{{ cert.issuer }}</div>
+                   <div class="text-secondary text-xs mt-1">{{ cert.date }}</div>
+                   <a v-if="cert.url" :href="cert.url" target="_blank" class="text-xs text-blue-500 hover:underline mt-2 inline-block">View Credential ↗</a>
+                </div>
+              </div>
+            </section>
+
             <section v-else-if="renderSection(section).type === 'custom'">
               <h2 class="section-heading">{{ renderSection(section).data.title }}</h2>
               <div class="text-content leading-relaxed whitespace-pre-line">{{ renderSection(section).data.content }}</div>
@@ -215,6 +230,18 @@ const renderSection = (sectionId) => {
                           {{ item.name }}
                         </li>
                       </ul>
+                    </div>
+                  </div>
+                </section>
+
+                <section v-else-if="renderSection(section).type === 'certifications'" class="mb-6">
+                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 section-title-sm">Certifications</h3>
+                  <div class="space-y-3">
+                    <div v-for="(cert, index) in renderSection(section).data" :key="index">
+                      <div class="font-bold text-primary text-sm">{{ cert.name }}</div>
+                      <div class="text-xs text-accent">{{ cert.issuer }}</div>
+                      <div class="text-xs text-secondary">{{ cert.date }}</div>
+                      <a v-if="cert.url" :href="cert.url" target="_blank" class="text-[10px] text-blue-500 hover:underline">View ↗</a>
                     </div>
                   </div>
                 </section>

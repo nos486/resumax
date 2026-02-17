@@ -175,6 +175,7 @@ const availableSections = [
   { id: 'bio', label: 'About / Bio' },
   { id: 'experience', label: 'Experience' },
   { id: 'education', label: 'Education' },
+  { id: 'certifications', label: 'Licenses & Certifications' },
   { id: 'skills', label: 'Skills' }
 ]
 

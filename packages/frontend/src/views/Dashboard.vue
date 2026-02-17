@@ -5,9 +5,25 @@ import { api } from '../lib/api'
 import { toast } from '../lib/toast'
 import IconPicker from '../components/IconPicker.vue'
 import ThemeCustomizer from '../components/ThemeCustomizer.vue'
+import DynamicTheme from '../components/themes/DynamicTheme.vue'
 
 const router = useRouter()
 const loading = ref(true)
+const activeTab = ref('editor') // 'editor' or 'preview'
+const openSections = reactive({
+  settings: false,
+  theme: false,
+  personal: true,
+  experience: false,
+  education: false,
+  certifications: false,
+  skills: false,
+  custom: false
+})
+
+const toggleSection = (key) => {
+  openSections[key] = !openSections[key]
+}
 
 const saving = ref(false)
 const resume = reactive({
@@ -23,6 +39,7 @@ const resume = reactive({
     education: [],
     experience: [],
     education: [],
+    certifications: [], // { name: '', issuer: '', date: '', url: '' }
     skills: [], // Now array of categories: { category: 'Frontend', items: [{ name: 'Vue', icon: 'Smile' }] }
     customSections: [], // { id: 'custom-1', title: 'Projects', content: '...' }
     themeConfig: {
@@ -158,6 +175,15 @@ function addEducation() {
 }
 function removeEducation(index) {
   resume.content.education.splice(index, 1)
+}
+
+// Certifications
+function addCertification() {
+  if (!resume.content.certifications) resume.content.certifications = []
+  resume.content.certifications.push({ name: '', issuer: '', date: '', url: '' })
+}
+function removeCertification(index) {
+  resume.content.certifications.splice(index, 1)
 }
 
 // Skills (Categories)
@@ -344,6 +370,67 @@ function removeCustomSection(index) {
                 <input v-model="edu.date" placeholder="Year" class="bg-gray-800 border-none rounded py-2 px-3 text-white placeholder-gray-600 focus:ring-1 focus:ring-purple-500" />
              </div>
           </div>
+        </div>
+      </section>
+
+      <!-- Certifications -->
+      <section class="bg-gray-800 rounded-xl overflow-hidden border border-gray-700 shadow-md transition-all duration-200">
+        <div 
+          @click="toggleSection('certifications')"
+          class="flex justify-between items-center p-6 cursor-pointer hover:bg-gray-750 select-none"
+        >
+          <div class="flex items-center gap-3">
+             <div class="p-2 bg-yellow-500/10 rounded-lg text-yellow-400">
+               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+               </svg>
+             </div>
+             <h2 class="text-xl font-bold text-white">Licenses & Certifications</h2>
+          </div>
+          <div class="flex items-center gap-3">
+             <span class="text-gray-500 text-sm">{{ resume.content.certifications?.length || 0 }} items</span>
+             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500 transform transition-transform" :class="{ 'rotate-180': openSections.certifications }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+             </svg>
+          </div>
+        </div>
+
+        <div v-show="openSections.certifications" class="p-6 pt-0 border-t border-gray-700/50">
+           <div class="flex justify-end mb-4 pt-4">
+             <button @click.stop="addCertification" class="text-sm bg-yellow-600/20 text-yellow-400 hover:bg-yellow-600/30 px-3 py-1 rounded-md transition border border-yellow-600/30 flex items-center gap-1">
+               <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+               Add
+             </button>
+           </div>
+           
+           <div v-for="(cert, index) in resume.content.certifications" :key="index" class="mb-4 p-4 bg-gray-900/50 rounded-lg border border-gray-700 relative group hover:border-yellow-500/30 transition">
+              <button @click="removeCertification(index)" class="absolute top-2 right-2 text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition p-1 rounded hover:bg-gray-800">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+              
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <div class="space-y-1">
+                   <label class="text-xs text-gray-500 uppercase font-semibold pl-1">Name</label>
+                   <input v-model="cert.name" placeholder="Certification Name" class="w-full bg-gray-800 border-none rounded py-2 px-3 text-white placeholder-gray-600 focus:ring-1 focus:ring-yellow-500 transition" />
+                 </div>
+                 <div class="space-y-1">
+                   <label class="text-xs text-gray-500 uppercase font-semibold pl-1">Issuing Organization</label>
+                   <input v-model="cert.issuer" placeholder="Issuer (e.g. Google)" class="w-full bg-gray-800 border-none rounded py-2 px-3 text-white placeholder-gray-600 focus:ring-1 focus:ring-yellow-500 transition" />
+                 </div>
+                 <div class="space-y-1">
+                   <label class="text-xs text-gray-500 uppercase font-semibold pl-1">Issue Date</label>
+                   <input v-model="cert.date" placeholder="Date (e.g. 2024)" class="w-full bg-gray-800 border-none rounded py-2 px-3 text-white placeholder-gray-600 focus:ring-1 focus:ring-yellow-500 transition" />
+                 </div>
+                 <div class="space-y-1">
+                   <label class="text-xs text-gray-500 uppercase font-semibold pl-1">Credential URL</label>
+                   <input v-model="cert.url" placeholder="https://..." class="w-full bg-gray-800 border-none rounded py-2 px-3 text-white placeholder-gray-600 focus:ring-1 focus:ring-yellow-500 transition" />
+                 </div>
+              </div>
+           </div>
+           
+           <div v-if="!resume.content.certifications || resume.content.certifications.length === 0" class="text-center py-8 text-gray-500 border-2 border-dashed border-gray-700/50 rounded-lg">
+             No certifications added yet.
+           </div>
         </div>
       </section>
 
