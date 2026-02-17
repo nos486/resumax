@@ -32,6 +32,11 @@ resume.put('/', async (c) => {
     const user = c.get('user')
     const { content, theme, slug } = await c.req.json()
 
+    // Slug validation: min 4 characters
+    if (slug && slug.length < 4) {
+        return c.json({ error: 'Slug must be at least 4 characters long' }, 400)
+    }
+
     // Validate slug uniqueness if changed?
     // For simplicity, slug is set once or updated.
     // If resume doesn't exist, create it.

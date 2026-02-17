@@ -9,16 +9,28 @@ const password = ref('')
 const loading = ref(false)
 const router = useRouter()
 
+window.onCaptchaVerified = (token) => {
+  captchaToken.value = token
+}
+
+const captchaToken = ref('')
+
 async function handleLogin() {
+  if (!captchaToken.value) {
+    toast.error('Please complete the captcha')
+    return
+  }
   loading.value = true
   try {
-    const data = await api.login(email.value, password.value)
+    const data = await api.login(email.value, password.value, captchaToken.value)
     localStorage.setItem('token', data.token)
     localStorage.setItem('user', JSON.stringify(data.user))
     toast.success('Welcome back!')
     router.push('/dashboard')
   } catch (e) {
     toast.error(e.message)
+    // Reset turnstile on error
+    if (window.turnstile) window.turnstile.reset()
   } finally {
     loading.value = false
   }
@@ -53,8 +65,9 @@ async function handleLogin() {
           />
         </div>
 
-
-
+        <div class="flex justify-center py-2">
+           <div class="cf-turnstile" data-sitekey="0x4AAAAAAA-placeholder" data-callback="onCaptchaVerified"></div>
+        </div>
 
         <button 
           type="submit" 

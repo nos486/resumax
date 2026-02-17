@@ -30,13 +30,13 @@ export async function request(endpoint, options = {}) {
 }
 
 export const api = {
-    login: (email, password) => request('/auth/login', {
+    login: (email, password, captchaToken) => request('/auth/login', {
         method: 'POST',
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, captchaToken }),
     }),
-    register: (email, password) => request('/auth/register', {
+    register: (email, password, captchaToken) => request('/auth/register', {
         method: 'POST',
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, captchaToken }),
     }),
     getResume: () => request('/resume'),
     updateResume: (data) => request('/resume', {

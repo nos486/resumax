@@ -9,14 +9,25 @@ const password = ref('')
 const loading = ref(false)
 const router = useRouter()
 
+window.onCaptchaVerified = (token) => {
+  captchaToken.value = token
+}
+
+const captchaToken = ref('')
+
 async function handleRegister() {
+  if (!captchaToken.value) {
+    toast.error('Please complete the captcha')
+    return
+  }
   loading.value = true
   try {
-    await api.register(email.value, password.value)
+    await api.register(email.value, password.value, captchaToken.value)
     toast.success('Account created! Please login.')
     router.push('/login')
   } catch (e) {
     toast.error(e.message)
+    if (window.turnstile) window.turnstile.reset()
   } finally {
     loading.value = false
   }
@@ -51,8 +62,9 @@ async function handleRegister() {
           />
         </div>
 
-
-
+        <div class="flex justify-center py-2">
+           <div class="cf-turnstile" data-sitekey="0x4AAAAAAA-placeholder" data-callback="onCaptchaVerified"></div>
+        </div>
 
         <button 
           type="submit" 
