@@ -31,5 +31,9 @@ onMounted(async () => {
     {{ error }}
   </div>
 
-  <DynamicTheme :resume="resume" v-else />
+  <div v-else class="min-h-screen py-12 px-4 shadow-sm" :style="{ backgroundColor: resume.content?.themeConfig?.colors?.background || '#f3f4f6' }">
+    <div class="max-w-5xl mx-auto shadow-2xl overflow-hidden ring-1 ring-black/5">
+      <DynamicTheme :resume="resume" />
+    </div>
+  </div>
 </template>

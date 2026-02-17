@@ -484,10 +484,9 @@ function removeCustomSection(index) {
           </div>
         </div>
 
-        <!-- Preview content -->
         <div class="flex-1 overflow-y-auto custom-scrollbar bg-[radial-gradient(#ffffff05_1px,transparent_1px)] [background-size:20px_20px]">
-          <div class="min-h-full p-8 lg:p-12 xl:p-20 flex justify-center">
-            <div class="w-full max-w-[850px] shadow-[0_45px_100px_-20px_rgba(0,0,0,0.8)] origin-top hover:scale-[1.01] transition-transform duration-500">
+          <div class="min-h-full flex justify-center">
+            <div class="w-full shadow-2xl origin-top hover:scale-[1.005] transition-transform duration-500">
                <DynamicTheme :resume="resume" class="pointer-events-none" />
             </div>
           </div>
