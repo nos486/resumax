@@ -158,7 +158,7 @@ const cssVars = computed(() => ({
                    config.value.font === 'JetBrains Mono' ? '"JetBrains Mono", monospace' : 'Inter, sans-serif'
 }))
 
-const borderClass = computed(() => config.value.borderRadius === 'rounded' ? 'rounded-2xl' : 'rounded-none')
+const borderClass = computed(() => config.value.borderRadius === 'rounded' ? 'md:rounded-2xl' : 'rounded-none')
 
 const renderSection = (sectionId) => {
   const section = sectionId
