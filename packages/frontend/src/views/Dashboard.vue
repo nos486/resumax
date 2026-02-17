@@ -514,20 +514,20 @@ function removeCustomSection(index) {
           </div>
         </div>
 
-        <div class="flex-1 overflow-y-auto custom-scrollbar transition-all duration-500 flex justify-center items-start" :style="{ backgroundColor: resume.content?.themeConfig?.colors?.background || '#f3f4f6' }">
+        <div class="flex-1 overflow-y-auto custom-scrollbar transition-all duration-500 flex justify-center items-start p-8 pb-32" :style="{ backgroundColor: resume.content?.themeConfig?.colors?.background || '#f3f4f6' }">
           <div 
             :class="[
               isPreviewMobile 
-                ? 'w-[375px] my-12 mx-auto border-[12px] border-gray-900 rounded-[3rem] shadow-[0_0_0_2px_#1f2937,0_20px_50px_rgba(0,0,0,0.3)] aspect-[9/19] h-auto max-h-[750px] overflow-hidden sticky top-8' 
-                : 'w-full max-w-5xl my-8 mx-4 shadow-[0_20px_50px_rgba(0,0,0,0.15)] ring-1 ring-black/5'
+                ? 'w-[375px] my-12 mx-auto border-[12px] border-gray-900 rounded-[3rem] shadow-[0_0_0_2px_#1f2937,0_30px_60px_rgba(0,0,0,0.5)] aspect-[9/19] h-auto max-h-[750px] overflow-hidden sticky top-8' 
+                : 'w-full max-w-5xl transition-all'
             ]"
-            class="bg-white transition-all duration-500 relative flex flex-col"
+            class="transition-all duration-500 relative flex flex-col"
           >
              <!-- Mobile Notch Simulation -->
              <div v-if="isPreviewMobile" class="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-gray-900 rounded-b-2xl z-20"></div>
              
-             <div :class="isPreviewMobile ? 'overflow-y-auto flex-1' : ''" class="custom-scrollbar">
-                <DynamicTheme :resume="resume" class="pointer-events-none" />
+             <div :class="isPreviewMobile ? 'overflow-y-auto flex-1' : 'shadow-2xl ring-1 ring-black/5'" class="custom-scrollbar bg-white">
+                <DynamicTheme :resume="resume" :forced-mobile="isPreviewMobile" class="pointer-events-none" />
              </div>
           </div>
         </div>

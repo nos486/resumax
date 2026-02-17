@@ -3,7 +3,8 @@ import { computed } from 'vue'
 import * as icons from 'lucide-vue-next'
 
 const props = defineProps({
-  resume: Object
+  resume: Object,
+  forcedMobile: { type: Boolean, default: false }
 })
 
 const renderIcon = (name) => {
@@ -163,8 +164,15 @@ const renderSection = (sectionId) => {
         </div>
       </header>
 
-      <!-- 1-Column Layout (Mobile & Desktop if selected) -->
-      <div v-if="true" class="content-background p-8 space-y-8" :class="{ 'md:hidden': config.layout === '2-column' }">
+      <!-- 1-Column Layout -->
+      <div 
+        v-if="config.layout !== '2-column' || forcedMobile || true" 
+        class="content-background p-8 space-y-8" 
+        :class="{ 
+          'md:hidden': config.layout === '2-column' && !forcedMobile,
+          'block': forcedMobile
+        }"
+      >
         <template v-for="section in config.sectionOrder" :key="section">
           <component :is="'div'" v-if="renderSection(section)">
             <section v-if="renderSection(section).type === 'bio'">
@@ -248,7 +256,7 @@ const renderSection = (sectionId) => {
       </div>
 
       <!-- 2-Column Layout (Desktop only if selected) -->
-      <div v-if="config.layout === '2-column'" class="content-background p-8 hidden md:block">
+      <div v-if="config.layout === '2-column' && !forcedMobile" class="content-background p-8 hidden md:block">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
           <!-- Left Column -->
           <div class="md:col-span-1 space-y-6">
@@ -375,10 +383,11 @@ const renderSection = (sectionId) => {
           </div>
         </div>
       </div>
-    </div>
-    
-    <div class="text-center mt-8 text-secondary text-sm">
-      Built with <a href="/" class="text-accent hover:underline">Resumax</a>
+      <div class="text-center py-12 opacity-40 hover:opacity-100 transition-opacity">
+        <p class="text-xs text-secondary">
+          Built with <a href="/" class="text-accent font-bold hover:underline">Resumax</a>
+        </p>
+      </div>
     </div>
   </div>
 </template>
