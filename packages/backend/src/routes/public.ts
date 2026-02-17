@@ -14,6 +14,8 @@ publicRoute.get('/:slug', async (c) => {
         return c.json({ error: 'Resume not found' }, 404)
     }
 
+    // Parse content if needed (similar to resume.ts)
+    // Assuming SQLite driver returns JSON as string if column type is TEXT
     try {
         if (typeof resume.content === 'string') {
             resume.content = JSON.parse(resume.content)

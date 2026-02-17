@@ -1,25 +1,13 @@
 <script setup>
-import { ref, onMounted, computed, defineAsyncComponent } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { api } from '../lib/api'
+import DynamicTheme from '../components/themes/DynamicTheme.vue'
 
 const route = useRoute()
 const loading = ref(true)
 const error = ref('')
 const resume = ref(null)
-
-const themes = {
-  modern: defineAsyncComponent(() => import('../components/themes/ModernTheme.vue')),
-  professional: defineAsyncComponent(() => import('../components/themes/ProfessionalTheme.vue')),
-  // fallback for minimal or others to modern for now
-  minimal: defineAsyncComponent(() => import('../components/themes/ModernTheme.vue')), 
-}
-
-const CurrentTheme = computed(() => {
-  if (!resume.value) return null
-  const themeName = resume.value.theme || 'modern'
-  return themes[themeName] || themes.modern
-})
 
 onMounted(async () => {
   try {
@@ -43,6 +31,5 @@ onMounted(async () => {
     {{ error }}
   </div>
 
-  <component :is="CurrentTheme" :resume="resume" v-else />
+  <DynamicTheme :resume="resume" v-else />
 </template>
-
