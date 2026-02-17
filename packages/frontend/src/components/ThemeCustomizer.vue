@@ -19,7 +19,7 @@ const presets = {
       accent: '#3b82f6'
     },
     font: 'Inter',
-    layout: 'full-width',
+    layout: '1-column',
     borderRadius: 'rounded'
   },
   professional: {
@@ -33,7 +33,7 @@ const presets = {
       accent: '#1f2937'
     },
     font: 'Merriweather',
-    layout: 'sidebar',
+    layout: '2-column',
     borderRadius: 'none'
   },
   creative: {
@@ -47,7 +47,7 @@ const presets = {
       accent: '#ec4899'
     },
     font: 'Playfair Display',
-    layout: 'full-width',
+    layout: '1-column',
     borderRadius: 'rounded'
   },
   minimal: {
@@ -61,24 +61,40 @@ const presets = {
       accent: '#000000'
     },
     font: 'Roboto',
-    layout: 'full-width',
+    layout: '1-column',
     borderRadius: 'none'
   }
 }
 
 const config = reactive({ ...props.modelValue })
 
+// Ensure config has columnAssignment
+if (!config.columnAssignment) {
+  config.columnAssignment = {
+    leftColumn: ['bio', 'skills'],
+    rightColumn: ['experience', 'education']
+  }
+}
+
 watch(config, (newVal) => {
   emit('update:modelValue', { ...newVal })
 }, { deep: true })
 
 function applyPreset(presetName) {
-  Object.assign(config, presets[presetName])
+  const preset = presets[presetName]
+  Object.assign(config, preset)
+  
+  // Reset layouts defaults
+  config.layout = preset.layout === '1-column' ? '1-column' : '1-column' // All presets default to 1-col for now to be safe, or logic can be improved
+  if (presetName === 'professional') config.layout = '2-column'
+  
   config.sectionOrder = ['bio', 'experience', 'education', 'skills']
-  config.showIcons = true
+  config.columnAssignment = {
+    leftColumn: ['bio', 'skills'],
+    rightColumn: ['experience', 'education']
+  }
 }
 
-// Section ordering
 const availableSections = [
   { id: 'bio', label: 'About / Bio' },
   { id: 'experience', label: 'Experience' },
@@ -86,27 +102,82 @@ const availableSections = [
   { id: 'skills', label: 'Skills' }
 ]
 
-let draggedIndex = null
-
-function onDragStart(index) {
-  draggedIndex = index
+function getSectionLabel(id) {
+  const builtin = availableSections.find(s => s.id === id)
+  if (builtin) return builtin.label
+  if (id.startsWith('custom-')) return 'Custom Section'
+  return id
 }
 
-function onDragOver(event, index) {
+let draggedItem = null
+let draggedFromList = null
+
+function onDragStart(index, listName) {
+  if (listName === 'main') {
+    draggedItem = config.sectionOrder[index]
+    draggedFromList = 'main'
+  } else if (listName === 'leftColumn') {
+    draggedItem = config.columnAssignment.leftColumn[index]
+    draggedFromList = 'leftColumn'
+  } else if (listName === 'rightColumn') {
+    draggedItem = config.columnAssignment.rightColumn[index]
+    draggedFromList = 'rightColumn'
+  }
+}
+
+// Reordering within same list (for 1-column)
+function onDragOver(event, index, listName) {
   event.preventDefault()
-  if (draggedIndex === null || draggedIndex === index) return
+  if (listName !== 'main' || draggedFromList !== 'main') return
   
+  const currentIndex = config.sectionOrder.indexOf(draggedItem)
+  if (currentIndex === index) return
+
   const items = [...config.sectionOrder]
-  const draggedItem = items[draggedIndex]
-  items.splice(draggedIndex, 1)
+  items.splice(currentIndex, 1)
   items.splice(index, 0, draggedItem)
-  
   config.sectionOrder = items
-  draggedIndex = index
+}
+
+// Dropping between columns
+function onDrop(targetList) {
+  if (!draggedItem || !draggedFromList) return
+  if (draggedFromList === targetList) return
+
+  // Remove from source
+  if (draggedFromList === 'leftColumn') {
+    const idx = config.columnAssignment.leftColumn.indexOf(draggedItem)
+    config.columnAssignment.leftColumn.splice(idx, 1)
+  } else if (draggedFromList === 'rightColumn') {
+    const idx = config.columnAssignment.rightColumn.indexOf(draggedItem)
+    config.columnAssignment.rightColumn.splice(idx, 1)
+  }
+
+  // Add to target
+  if (targetList === 'leftColumn') {
+    config.columnAssignment.leftColumn.push(draggedItem)
+  } else {
+    config.columnAssignment.rightColumn.push(draggedItem)
+  }
+  
+  draggedItem = null
+  draggedFromList = null
 }
 
 function onDragEnd() {
-  draggedIndex = null
+  draggedItem = null
+  draggedFromList = null
+}
+
+function moveSection(sectionId, from, to) {
+  const fromList = config.columnAssignment[from]
+  const toList = config.columnAssignment[to]
+  
+  const idx = fromList.indexOf(sectionId)
+  if (idx > -1) {
+    fromList.splice(idx, 1)
+    toList.push(sectionId)
+  }
 }
 </script>
 
@@ -170,37 +241,69 @@ function onDragEnd() {
     <div>
       <h3 class="text-sm font-bold text-gray-300 mb-2">Layout</h3>
       <div class="grid grid-cols-2 gap-2">
-        <button @click="config.layout = 'full-width'" :class="config.layout === 'full-width' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300'" class="px-3 py-2 rounded text-sm font-medium transition">Full Width</button>
-        <button @click="config.layout = 'sidebar'" :class="config.layout === 'sidebar' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300'" class="px-3 py-2 rounded text-sm font-medium transition">Sidebar</button>
+        <button @click="config.layout = '1-column'" :class="config.layout === '1-column' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300'" class="px-3 py-2 rounded text-sm font-medium transition">1 Column</button>
+        <button @click="config.layout = '2-column'" :class="config.layout === '2-column' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300'" class="px-3 py-2 rounded text-sm font-medium transition">2 Columns</button>
       </div>
     </div>
 
-    <!-- Border Radius -->
+    <!-- Section Order / Column Assignment -->
     <div>
-      <h3 class="text-sm font-bold text-gray-300 mb-2">Border Style</h3>
-      <div class="grid grid-cols-2 gap-2">
-        <button @click="config.borderRadius = 'rounded'" :class="config.borderRadius === 'rounded' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300'" class="px-3 py-2 rounded text-sm font-medium transition">Rounded</button>
-        <button @click="config.borderRadius = 'none'" :class="config.borderRadius === 'none' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300'" class="px-3 py-2 rounded text-sm font-medium transition">Sharp</button>
-      </div>
-    </div>
-
-    <!-- Section Order -->
-    <div>
-      <h3 class="text-sm font-bold text-gray-300 mb-2">Section Order (Drag to Reorder)</h3>
-      <div class="space-y-2">
+      <h3 class="text-sm font-bold text-gray-300 mb-2">
+        {{ config.layout === '2-column' ? 'Column Assignment' : 'Section Order (Drag to Reorder)' }}
+      </h3>
+      
+      <!-- 1 Column Mode -->
+      <div v-if="config.layout === '1-column'" class="space-y-2">
         <div 
           v-for="(sectionId, index) in config.sectionOrder" 
           :key="sectionId"
           draggable="true"
-          @dragstart="onDragStart(index)"
-          @dragover="(e) => onDragOver(e, index)"
+          @dragstart="onDragStart(index, 'main')"
+          @dragover="(e) => onDragOver(e, index, 'main')"
           @dragend="onDragEnd"
           class="bg-gray-700 p-3 rounded cursor-move hover:bg-gray-600 transition flex items-center gap-2"
         >
           <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
           </svg>
-          <span class="text-white text-sm">{{ availableSections.find(s => s.id === sectionId)?.label }}</span>
+          <span class="text-white text-sm">{{ getSectionLabel(sectionId) }}</span>
+        </div>
+      </div>
+
+      <!-- 2 Column Mode -->
+      <div v-else class="grid grid-cols-2 gap-4">
+        <!-- Left Column -->
+        <div class="bg-gray-800 p-3 rounded border border-gray-700">
+          <h4 class="text-xs font-bold text-gray-400 uppercase mb-2 text-center">Left Column</h4>
+          <div class="space-y-2 min-h-[100px]" @dragover.prevent @drop="onDrop('leftColumn')">
+            <div 
+              v-for="(sectionId, index) in config.columnAssignment.leftColumn" 
+              :key="sectionId"
+              draggable="true"
+              @dragstart="onDragStart(index, 'leftColumn')"
+              class="bg-gray-700 p-2 rounded cursor-move hover:bg-gray-600 transition flex items-center justify-between gap-1"
+            >
+              <span class="text-white text-xs truncate">{{ getSectionLabel(sectionId) }}</span>
+              <button @click="moveSection(sectionId, 'leftColumn', 'rightColumn')" class="text-gray-400 hover:text-white text-xs">→</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column -->
+        <div class="bg-gray-800 p-3 rounded border border-gray-700">
+          <h4 class="text-xs font-bold text-gray-400 uppercase mb-2 text-center">Right Column</h4>
+          <div class="space-y-2 min-h-[100px]" @dragover.prevent @drop="onDrop('rightColumn')">
+            <div 
+              v-for="(sectionId, index) in config.columnAssignment.rightColumn" 
+              :key="sectionId"
+              draggable="true"
+              @dragstart="onDragStart(index, 'rightColumn')"
+              class="bg-gray-700 p-2 rounded cursor-move hover:bg-gray-600 transition flex items-center justify-between gap-1"
+            >
+              <button @click="moveSection(sectionId, 'rightColumn', 'leftColumn')" class="text-gray-400 hover:text-white text-xs">←</button>
+              <span class="text-white text-xs truncate">{{ getSectionLabel(sectionId) }}</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>

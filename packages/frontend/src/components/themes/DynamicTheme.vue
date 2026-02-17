@@ -30,7 +30,15 @@ const defaultConfig = {
 }
 
 const config = computed(() => {
-  return { ...defaultConfig, ...(props.resume.content?.themeConfig || {}) }
+  return { 
+    ...defaultConfig, 
+    ...(props.resume.content?.themeConfig || {}),
+    // Ensure columnAssignment exists
+    columnAssignment: props.resume.content?.themeConfig?.columnAssignment || {
+      leftColumn: ['bio', 'skills'],
+      rightColumn: ['experience', 'education']
+    }
+  }
 })
 
 const cssVars = computed(() => ({
@@ -50,17 +58,35 @@ const cssVars = computed(() => ({
 
 const borderClass = computed(() => config.value.borderRadius === 'rounded' ? 'rounded-2xl' : 'rounded-none')
 
-const sectionComponents = {
-  bio: 'bio-section',
-  experience: 'experience-section',
-  education: 'education-section',
-  skills: 'skills-section'
+const renderSection = (sectionId) => {
+  const section = sectionId
+  const content = props.resume.content
+  
+  if (section === 'bio' && content.personalInfo?.bio) {
+    return { type: 'bio', data: content.personalInfo.bio }
+  }
+  if (section === 'experience' && content.experience?.length) {
+    return { type: 'experience', data: content.experience }
+  }
+  if (section === 'education' && content.education?.length) {
+    return { type: 'education', data: content.education }
+  }
+  if (section === 'skills' && content.skills?.length) {
+    return { type: 'skills', data: content.skills }
+  }
+  if (section.startsWith('custom-') && content.customSections) {
+    const customSection = content.customSections.find(s => s.id === section)
+    if (customSection) {
+      return { type: 'custom', data: customSection }
+    }
+  }
+  return null
 }
 </script>
 
 <template>
   <div :style="cssVars" class="dynamic-theme min-h-screen py-12 px-4">
-    <div class="max-w-4xl mx-auto shadow-xl overflow-hidden" :class="borderClass">
+    <div class="max-w-5xl mx-auto shadow-xl overflow-hidden" :class="borderClass">
       
       <!-- Header -->
       <header class="header-gradient text-white p-8">
@@ -90,67 +116,173 @@ const sectionComponents = {
         </div>
       </header>
 
-      <div class="content-background p-8 space-y-8">
-        <!-- Render sections in custom order -->
+      <!-- 1-Column Layout -->
+      <div v-if="config.layout === '1-column'" class="content-background p-8 space-y-8">
         <template v-for="section in config.sectionOrder" :key="section">
-          
-          <!-- Bio -->
-          <section v-if="section === 'bio' && resume.content.personalInfo.bio">
-            <h2 class="section-heading">About Me</h2>
-            <p class="text-content leading-relaxed">{{ resume.content.personalInfo.bio }}</p>
-          </section>
+          <component :is="'div'" v-if="renderSection(section)">
+            <section v-if="renderSection(section).type === 'bio'">
+              <h2 class="section-heading">About Me</h2>
+              <p class="text-content leading-relaxed">{{ renderSection(section).data }}</p>
+            </section>
 
-          <!-- Experience -->
-          <section v-if="section === 'experience' && resume.content.experience?.length">
-            <h2 class="section-heading">Experience</h2>
-            <div class="space-y-6">
-              <div v-for="(exp, index) in resume.content.experience" :key="index" class="relative pl-6 border-l-2 border-accent">
-                <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full accent-dot"></div>
-                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-baseline mb-1">
-                  <h3 class="text-lg font-bold text-primary flex items-center gap-2">
-                    <component :is="renderIcon(exp.icon)" v-if="config.showIcons && exp.icon" class="w-4 h-4" />
-                    {{ exp.title }}
+            <section v-else-if="renderSection(section).type === 'experience'">
+              <h2 class="section-heading">Experience</h2>
+              <div class="space-y-6">
+                <div v-for="(exp, index) in renderSection(section).data" :key="index" class="relative pl-6 border-l-2 border-accent">
+                  <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full accent-dot"></div>
+                  <div class="flex flex-col sm:flex-row sm:justify-between sm:items-baseline mb-1">
+                    <h3 class="text-lg font-bold text-primary flex items-center gap-2">
+                      <component :is="renderIcon(exp.icon)" v-if="config.showIcons && exp.icon" class="w-4 h-4" />
+                      {{ exp.title }}
+                    </h3>
+                    <span class="text-sm text-secondary font-medium">{{ exp.date }}</span>
+                  </div>
+                  <div class="text-accent font-medium mb-2">{{ exp.company }}</div>
+                  <p class="text-content text-sm whitespace-pre-line">{{ exp.description }}</p>
+                </div>
+              </div>
+            </section>
+
+            <section v-else-if="renderSection(section).type === 'education'">
+              <h2 class="section-heading">Education</h2>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div v-for="(edu, index) in renderSection(section).data" :key="index" class="bg-surface p-4 rounded-lg border border-gray-200 hover:shadow-md transition">
+                  <h3 class="font-bold text-primary flex items-center gap-2">
+                    <component :is="renderIcon(edu.icon)" v-if="config.showIcons && edu.icon" class="w-4 h-4" />
+                    {{ edu.school }}
                   </h3>
-                  <span class="text-sm text-secondary font-medium">{{ exp.date }}</span>
-                </div>
-                <div class="text-accent font-medium mb-2">{{ exp.company }}</div>
-                <p class="text-content text-sm whitespace-pre-line">{{ exp.description }}</p>
-              </div>
-            </div>
-          </section>
-
-          <!-- Education -->
-          <section v-if="section === 'education' && resume.content.education?.length">
-            <h2 class="section-heading">Education</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div v-for="(edu, index) in resume.content.education" :key="index" class="bg-surface p-4 rounded-lg border border-gray-200 hover:shadow-md transition">
-                <h3 class="font-bold text-primary flex items-center gap-2">
-                  <component :is="renderIcon(edu.icon)" v-if="config.showIcons && edu.icon" class="w-4 h-4" />
-                  {{ edu.school }}
-                </h3>
-                <div class="text-content text-sm">{{ edu.degree }}</div>
-                <div class="text-secondary text-xs mt-1">{{ edu.date }}</div>
-              </div>
-            </div>
-          </section>
-
-          <!-- Skills -->
-          <section v-if="section === 'skills' && resume.content.skills?.length">
-            <h2 class="section-heading">Skills</h2>
-            <div v-if="resume.content.skills[0]?.items" class="space-y-6">
-              <div v-for="(cat, i) in resume.content.skills" :key="i">
-                <h3 class="text-lg font-semibold text-primary mb-2">{{ cat.category }}</h3>
-                <div class="flex flex-wrap gap-2">
-                  <span v-for="(item, j) in cat.items" :key="j" class="skill-badge">
-                    <component :is="renderIcon(item.icon)" v-if="config.showIcons && item.icon" class="w-3 h-3" />
-                    {{ item.name }}
-                  </span>
+                  <div class="text-content text-sm">{{ edu.degree }}</div>
+                  <div class="text-secondary text-xs mt-1">{{ edu.date }}</div>
                 </div>
               </div>
-            </div>
-          </section>
+            </section>
 
+            <section v-else-if="renderSection(section).type === 'skills'">
+              <h2 class="section-heading">Skills</h2>
+              <div v-if="renderSection(section).data[0]?.items" class="space-y-6">
+                <div v-for="(cat, i) in renderSection(section).data" :key="i">
+                  <h3 class="text-lg font-semibold text-primary mb-2">{{ cat.category }}</h3>
+                  <div class="flex flex-wrap gap-2">
+                    <span v-for="(item, j) in cat.items" :key="j" class="skill-badge">
+                      <component :is="renderIcon(item.icon)" v-if="config.showIcons && item.icon" class="w-3 h-3" />
+                      {{ item.name }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section v-else-if="renderSection(section).type === 'custom'">
+              <h2 class="section-heading">{{ renderSection(section).data.title }}</h2>
+              <div class="text-content leading-relaxed whitespace-pre-line">{{ renderSection(section).data.content }}</div>
+            </section>
+          </component>
         </template>
+      </div>
+
+      <!-- 2-Column Layout -->
+      <div v-else class="content-background p-8">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <!-- Left Column -->
+          <div class="md:col-span-1 space-y-6">
+            <template v-for="section in config.columnAssignment.leftColumn" :key="section">
+              <component :is="'div'" v-if="renderSection(section)">
+                <section v-if="renderSection(section).type === 'bio'" class="mb-6">
+                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 text-primary">About</h3>
+                  <p class="text-sm leading-relaxed text-content">{{ renderSection(section).data }}</p>
+                </section>
+
+                <section v-else-if="renderSection(section).type === 'education'" class="mb-6">
+                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 text-primary">Education</h3>
+                  <div class="space-y-4">
+                    <div v-for="(edu, index) in renderSection(section).data" :key="index">
+                      <div class="font-bold text-primary text-sm">{{ edu.school }}</div>
+                      <div class="text-xs text-content">{{ edu.degree }}</div>
+                      <div class="text-xs text-secondary mt-1">{{ edu.date }}</div>
+                    </div>
+                  </div>
+                </section>
+
+                <section v-else-if="renderSection(section).type === 'skills'" class="mb-6">
+                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 text-primary">Skills</h3>
+                  <div v-if="renderSection(section).data[0]?.items" class="space-y-4">
+                    <div v-for="(cat, i) in renderSection(section).data" :key="i">
+                      <h4 class="text-xs font-bold text-secondary uppercase mb-2">{{ cat.category }}</h4>
+                      <ul class="text-sm text-content space-y-1">
+                        <li v-for="(item, j) in cat.items" :key="j" class="flex items-center gap-2">
+                          <span class="w-1.5 h-1.5 bg-accent rounded-full"></span>
+                          {{ item.name }}
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </section>
+
+                <section v-else-if="renderSection(section).type === 'custom'" class="mb-6">
+                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 text-primary">{{ renderSection(section).data.title }}</h3>
+                  <div class="text-sm text-content leading-relaxed whitespace-pre-line">{{ renderSection(section).data.content }}</div>
+                </section>
+              </component>
+            </template>
+          </div>
+
+          <!-- Right Column -->
+          <div class="md:col-span-2 space-y-8">
+            <template v-for="section in config.columnAssignment.rightColumn" :key="section">
+              <component :is="'div'" v-if="renderSection(section)">
+                <section v-if="renderSection(section).type === 'experience'">
+                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-4 text-primary">Experience</h3>
+                  <div class="space-y-6">
+                    <div v-for="(exp, index) in renderSection(section).data" :key="index">
+                      <div class="flex justify-between items-baseline mb-1">
+                        <h4 class="text-lg font-bold text-primary">{{ exp.title }}</h4>
+                        <span class="text-sm text-secondary">{{ exp.date }}</span>
+                      </div>
+                      <div class="text-accent font-semibold mb-2">{{ exp.company }}</div>
+                      <p class="text-content text-sm leading-relaxed whitespace-pre-line">{{ exp.description }}</p>
+                    </div>
+                  </div>
+                </section>
+
+                <section v-else-if="renderSection(section).type === 'bio'">
+                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 text-primary">About</h3>
+                  <p class="text-content leading-relaxed">{{ renderSection(section).data }}</p>
+                </section>
+
+                <section v-else-if="renderSection(section).type === 'education'">
+                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 text-primary">Education</h3>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div v-for="(edu, index) in renderSection(section).data" :key="index" class="bg-surface p-4 rounded-lg border border-gray-200">
+                      <h4 class="font-bold text-primary">{{ edu.school }}</h4>
+                      <div class="text-content text-sm">{{ edu.degree }}</div>
+                      <div class="text-secondary text-xs mt-1">{{ edu.date }}</div>
+                    </div>
+                  </div>
+                </section>
+
+                <section v-else-if="renderSection(section).type === 'skills'">
+                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 text-primary">Skills</h3>
+                  <div v-if="renderSection(section).data[0]?.items" class="space-y-6">
+                    <div v-for="(cat, i) in renderSection(section).data" :key="i">
+                      <h4 class="text-lg font-semibold text-primary mb-2">{{ cat.category }}</h4>
+                      <div class="flex flex-wrap gap-2">
+                        <span v-for="(item, j) in cat.items" :key="j" class="skill-badge">
+                          <component :is="renderIcon(item.icon)" v-if="config.showIcons && item.icon" class="w-3 h-3" />
+                          {{ item.name }}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <section v-else-if="renderSection(section).type === 'custom'">
+                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 text-primary">{{ renderSection(section).data.title }}</h3>
+                  <div class="text-content leading-relaxed whitespace-pre-line">{{ renderSection(section).data.content }}</div>
+                </section>
+              </component>
+            </template>
+          </div>
+        </div>
       </div>
     </div>
     

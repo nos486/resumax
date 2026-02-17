@@ -21,7 +21,10 @@ const resume = reactive({
     },
     experience: [],
     education: [],
+    experience: [],
+    education: [],
     skills: [], // Now array of categories: { category: 'Frontend', items: [{ name: 'Vue', icon: 'Smile' }] }
+    customSections: [], // { id: 'custom-1', title: 'Projects', content: '...' }
     themeConfig: {
       colors: {
         primary: '#3b82f6',
@@ -169,6 +172,36 @@ function addSkillItem(categoryIndex) {
 }
 function removeSkillItem(categoryIndex, itemIndex) {
   resume.content.skills[categoryIndex].items.splice(itemIndex, 1)
+}
+
+// Custom Sections
+function addCustomSection() {
+  if (!resume.content.customSections) resume.content.customSections = []
+  const id = `custom-${Date.now()}`
+  resume.content.customSections.push({ id, title: 'New Section', content: '' })
+  
+  // Add to order lists
+  resume.content.themeConfig.sectionOrder.push(id)
+  if (resume.content.themeConfig.columnAssignment) {
+    resume.content.themeConfig.columnAssignment.leftColumn.push(id) // Default to left
+  }
+}
+
+function removeCustomSection(index) {
+  const section = resume.content.customSections[index]
+  resume.content.customSections.splice(index, 1)
+  
+  // Remove from order lists
+  const orderIdx = resume.content.themeConfig.sectionOrder.indexOf(section.id)
+  if (orderIdx > -1) resume.content.themeConfig.sectionOrder.splice(orderIdx, 1)
+  
+  if (resume.content.themeConfig.columnAssignment) {
+    const leftIdx = resume.content.themeConfig.columnAssignment.leftColumn.indexOf(section.id)
+    if (leftIdx > -1) resume.content.themeConfig.columnAssignment.leftColumn.splice(leftIdx, 1)
+    
+    const rightIdx = resume.content.themeConfig.columnAssignment.rightColumn.indexOf(section.id)
+    if (rightIdx > -1) resume.content.themeConfig.columnAssignment.rightColumn.splice(rightIdx, 1)
+  }
 }
 </script>
 
@@ -343,6 +376,27 @@ function removeSkillItem(categoryIndex, itemIndex) {
                </button>
              </div>
            </div>
+        </div>
+      </section>
+
+      <!-- Custom Sections -->
+      <section class="bg-gray-800 rounded-xl p-6 border border-gray-700 shadow-md">
+        <div class="flex justify-between items-center mb-4 border-b border-gray-700 pb-2">
+          <h2 class="text-xl font-bold text-white">Custom Sections</h2>
+          <button @click="addCustomSection" class="text-sm bg-pink-600/20 text-pink-400 hover:bg-pink-600/30 px-3 py-1 rounded-md transition">+ Add Section</button>
+        </div>
+        
+        <div v-if="resume.content.customSections && resume.content.customSections.length === 0" class="text-gray-500 text-sm text-center py-4">
+          Add custom sections for anything else (e.g. Languages, Projects, Certifications).
+        </div>
+
+        <div v-for="(section, index) in resume.content.customSections" :key="index" class="mb-6 p-4 bg-gray-900/50 rounded-lg border border-gray-700 relative group">
+          <button @click="removeCustomSection(index)" class="absolute top-2 right-2 text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition">✕</button>
+          
+          <div class="space-y-4">
+             <input v-model="section.title" placeholder="Section Title (e.g. Projects)" class="bg-transparent text-lg font-bold text-white outline-none placeholder-gray-600 w-full" />
+             <textarea v-model="section.content" placeholder="Content... (Markdown supported)" rows="4" class="w-full bg-gray-800 border-none rounded py-2 px-3 text-white placeholder-gray-600 focus:ring-1 focus:ring-pink-500"></textarea>
+          </div>
         </div>
       </section>
 
