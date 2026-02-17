@@ -65,6 +65,53 @@ function handleLogout() {
   toast.info('Logged out')
 }
 
+// Image Upload
+function handleImageUpload(event) {
+  const file = event.target.files[0]
+  if (!file) return
+
+  if (file.size > 2 * 1024 * 1024) {
+    toast.error('Image too large. Please choose a file under 2MB.')
+    return
+  }
+
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    const img = new Image()
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      const MAX_WIDTH = 400
+      const MAX_HEIGHT = 400
+      let width = img.width
+      let height = img.height
+
+      if (width > height) {
+        if (width > MAX_WIDTH) {
+          height *= MAX_WIDTH / width
+          width = MAX_WIDTH
+        }
+      } else {
+        if (height > MAX_HEIGHT) {
+          width *= MAX_HEIGHT / height
+          height = MAX_HEIGHT
+        }
+      }
+
+      canvas.width = width
+      canvas.height = height
+      const ctx = canvas.getContext('2d')
+      ctx.drawImage(img, 0, 0, width, height)
+      
+      // Compress to JPEG at 80% quality
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.8)
+      resume.content.personalInfo.image = dataUrl
+      toast.success('Image uploaded and optimized!')
+    }
+    img.src = e.target.result
+  }
+  reader.readAsDataURL(file)
+}
+
 // Links
 function addLink() {
   if (!resume.content.personalInfo.links) resume.content.personalInfo.links = []
@@ -148,9 +195,8 @@ function removeSkillItem(categoryIndex, itemIndex) {
             <label class="block text-gray-400 mb-1 text-sm">Theme</label>
             <select v-model="resume.theme" class="w-full bg-gray-900 border border-gray-700 rounded-lg py-2 px-3 text-white outline-none">
               <option value="modern">Modern Dark</option>
-              <option value="professional">Professional</option>
-              <option value="creative">Creative Teal</option>
               <option value="minimal">Minimal Light</option>
+              <option value="professional">Professional</option>
             </select>
           </div>
         </div>
@@ -166,7 +212,24 @@ function removeSkillItem(categoryIndex, itemIndex) {
           <input v-model="resume.content.personalInfo.email" placeholder="Email" class="bg-gray-900 border border-gray-700 rounded-lg py-3 px-4 text-white outline-none focus:ring-1 focus:ring-blue-500 w-full" />
           <input v-model="resume.content.personalInfo.phone" placeholder="Phone" class="bg-gray-900 border border-gray-700 rounded-lg py-3 px-4 text-white outline-none focus:ring-1 focus:ring-blue-500 w-full" />
           <input v-model="resume.content.personalInfo.location" placeholder="Location" class="bg-gray-900 border border-gray-700 rounded-lg py-3 px-4 text-white outline-none focus:ring-1 focus:ring-blue-500 w-full" />
-          <input v-model="resume.content.personalInfo.image" placeholder="Profile Image URL" class="bg-gray-900 border border-gray-700 rounded-lg py-3 px-4 text-white outline-none focus:ring-1 focus:ring-blue-500 w-full" />
+          <div class="space-y-2">
+            <label class="block text-gray-400 text-sm">Profile Image</label>
+            <div class="flex items-center gap-4">
+              <div v-if="resume.content.personalInfo.image" class="relative group">
+                <img :src="resume.content.personalInfo.image" class="w-16 h-16 rounded-full object-cover border border-gray-600" />
+                <button @click="resume.content.personalInfo.image = ''" class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition">✕</button>
+              </div>
+              <div class="flex-1">
+                <input 
+                  type="file" 
+                  accept="image/jpeg,image/png,image/webp"
+                  @change="handleImageUpload" 
+                  class="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer"
+                />
+                <p class="text-xs text-gray-500 mt-1">Max 400x400px, auto-compressed.</p>
+              </div>
+            </div>
+          </div>
           
           <div class="col-span-1 md:col-span-2">
             <textarea v-model="resume.content.personalInfo.bio" placeholder="Professional Summary" rows="3" class="bg-gray-900 border border-gray-700 rounded-lg py-3 px-4 text-white outline-none focus:ring-1 focus:ring-blue-500 w-full"></textarea>
