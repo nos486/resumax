@@ -49,6 +49,7 @@ const cssVars = computed(() => ({
   '--color-text': config.value.colors.text,
   '--color-text-secondary': config.value.colors.textSecondary,
   '--color-accent': config.value.colors.accent,
+  '--color-section-title': config.value.colors.sectionTitle || config.value.colors.accent, // Fallback to accent
   '--font-family': config.value.font === 'Inter' ? 'Inter, sans-serif' :
                    config.value.font === 'Roboto' ? 'Roboto, sans-serif' :
                    config.value.font === 'Merriweather' ? 'Merriweather, serif' :

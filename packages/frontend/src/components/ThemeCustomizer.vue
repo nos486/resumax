@@ -109,22 +109,56 @@ const presets = {
 }
 
 const config = reactive({ ...props.modelValue })
+const customPresets = reactive(JSON.parse(localStorage.getItem('resumax_custom_presets') || '[]'))
 
-// Ensure config has columnAssignment
+// Ensure config has columnAssignment & sectionTitle color
 if (!config.columnAssignment) {
   config.columnAssignment = {
     leftColumn: ['bio', 'skills'],
     rightColumn: ['experience', 'education']
   }
 }
+if (!config.colors.sectionTitle) {
+  config.colors.sectionTitle = config.colors.accent
+}
 
 watch(config, (newVal) => {
   emit('update:modelValue', { ...newVal })
 }, { deep: true })
 
+function saveCustomPreset() {
+  const name = prompt('Enter a name for your custom preset:', 'My Custom Theme')
+  if (!name) return
+  
+  const newPreset = {
+    name,
+    ...JSON.parse(JSON.stringify(config))
+  }
+  
+  customPresets.push(newPreset)
+  localStorage.setItem('resumax_custom_presets', JSON.stringify(customPresets))
+}
+
+function removeCustomPreset(index) {
+  if (!confirm('Delete this preset?')) return
+  customPresets.splice(index, 1)
+  localStorage.setItem('resumax_custom_presets', JSON.stringify(customPresets))
+}
+
+function applyCustomPreset(preset) {
+  // Exclude name from properties to copy
+  const { name, ...settings } = preset
+  Object.assign(config, JSON.parse(JSON.stringify(settings)))
+}
+
 function applyPreset(presetName) {
   const preset = presets[presetName]
-  Object.assign(config, preset)
+  Object.assign(config, JSON.parse(JSON.stringify(preset)))
+  
+  // Set default sectionTitle if missing in preset
+  if (!config.colors.sectionTitle) {
+    config.colors.sectionTitle = config.colors.accent
+  }
   
   // Reset layouts defaults
   config.layout = preset.layout === '1-column' ? '1-column' : '1-column' // All presets default to 1-col for now to be safe, or logic can be improved
@@ -227,15 +261,33 @@ function moveSection(sectionId, from, to) {
   <div class="space-y-6">
     <!-- Presets -->
     <div>
-      <h3 class="text-sm font-bold text-gray-300 mb-2">Quick Presets</h3>
+      <div class="flex justify-between items-center mb-2">
+         <h3 class="text-sm font-bold text-gray-300">Quick Presets</h3>
+         <div class="flex gap-2">
+           <button @click="saveCustomPreset" class="text-xs bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded text-white transition">Save Current</button>
+         </div>
+      </div>
+      
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <button v-for="(preset, name) in presets" :key="name" @click="applyPreset(name)" class="flex flex-col items-center gap-2 p-3 rounded-lg border border-gray-700 bg-gray-800 hover:bg-gray-750 hover:border-blue-500 transition group">
+        <!-- Render default presets -->
+        <button v-for="(preset, name) in presets" :key="name" @click="applyPreset(name)" class="flex flex-col items-center gap-2 p-3 rounded-lg border border-gray-700 bg-gray-800 hover:bg-gray-750 hover:border-blue-500 transition group relative">
            <div class="flex gap-1">
              <div class="w-4 h-4 rounded-full" :style="{ background: preset.colors.primary }"></div>
              <div class="w-4 h-4 rounded-full" :style="{ background: preset.colors.secondary }"></div>
-             <div class="w-4 h-4 rounded-full" :style="{ background: preset.colors.background }"></div>
+             <div class="w-4 h-4 rounded-full border border-gray-600" :style="{ background: preset.colors.background }"></div>
            </div>
            <span class="text-xs font-medium text-gray-300 capitalize group-hover:text-white">{{ name }}</span>
+        </button>
+
+        <!-- Render user custom presets -->
+        <button v-for="(preset, index) in customPresets" :key="'custom-'+index" @click="applyCustomPreset(preset)" class="flex flex-col items-center gap-2 p-3 rounded-lg border border-gray-700 bg-gray-900 hover:bg-gray-800 hover:border-green-500 transition group relative">
+           <button @click.stop="removeCustomPreset(index)" class="absolute top-1 right-1 text-gray-600 hover:text-red-400 text-xs">✕</button>
+           <div class="flex gap-1">
+             <div class="w-4 h-4 rounded-full" :style="{ background: preset.colors.primary }"></div>
+             <div class="w-4 h-4 rounded-full" :style="{ background: preset.colors.secondary }"></div>
+             <div class="w-4 h-4 rounded-full border border-gray-600" :style="{ background: preset.colors.background }"></div>
+           </div>
+           <span class="text-xs font-medium text-gray-300 truncate w-full text-center group-hover:text-white">{{ preset.name }}</span>
         </button>
       </div>
     </div>
@@ -265,8 +317,12 @@ function moveSection(sectionId, from, to) {
           <input type="color" v-model="config.colors.text" class="w-full h-10 rounded border border-gray-600 bg-gray-800 cursor-pointer" />
         </div>
         <div>
-          <label class="text-xs text-gray-400 block mb-1">Accent</label>
+          <label class="text-xs text-gray-400 block mb-1">Accent (Details)</label>
           <input type="color" v-model="config.colors.accent" class="w-full h-10 rounded border border-gray-600 bg-gray-800 cursor-pointer" />
+        </div>
+        <div>
+          <label class="text-xs text-gray-400 block mb-1">Section Titles</label>
+          <input type="color" v-model="config.colors.sectionTitle" class="w-full h-10 rounded border border-gray-600 bg-gray-800 cursor-pointer" />
         </div>
       </div>
     </div>
