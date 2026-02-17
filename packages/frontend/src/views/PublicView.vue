@@ -31,8 +31,8 @@ onMounted(async () => {
     {{ error }}
   </div>
 
-  <div v-else class="min-h-screen py-12 px-4" :style="{ backgroundColor: resume.content?.themeConfig?.colors?.background || '#f3f4f6' }">
-    <div class="max-w-5xl mx-auto overflow-hidden">
+  <div v-else class="min-h-screen md:py-12 md:px-4" :style="{ backgroundColor: resume.content?.themeConfig?.colors?.background || '#f3f4f6' }">
+    <div class="md:max-w-5xl md:mx-auto overflow-hidden">
       <DynamicTheme :resume="resume" />
     </div>
   </div>
