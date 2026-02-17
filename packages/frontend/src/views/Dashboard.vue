@@ -55,7 +55,7 @@ const resume = reactive({
       },
       font: 'Inter',
       layout: '1-column',
-      sectionOrder: ['bio', 'experience', 'education', 'skills'],
+      sectionOrder: ['bio', 'experience', 'education', 'certifications', 'skills'],
       borderRadius: 'rounded',
       showIcons: true
     }

@@ -164,9 +164,9 @@ function applyPreset(presetName) {
   // Reset layouts defaults
   config.layout = preset.layout || '1-column'
   
-  config.sectionOrder = ['bio', 'experience', 'education', 'skills']
+  config.sectionOrder = ['bio', 'experience', 'education', 'certifications', 'skills']
   config.columnAssignment = {
-    leftColumn: ['bio', 'skills'],
+    leftColumn: ['bio', 'skills', 'certifications'],
     rightColumn: ['experience', 'education']
   }
 }
