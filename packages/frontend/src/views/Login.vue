@@ -67,8 +67,11 @@ async function handleLogin() {
           />
         </div>
 
-        <div class="flex justify-center py-2">
-           <div class="cf-turnstile" :data-sitekey="siteKey" data-callback="onCaptchaVerified"></div>
+        <div class="space-y-2">
+           <p class="text-[10px] text-gray-500 text-center uppercase tracking-widest">Please complete the captcha</p>
+           <div class="flex justify-center">
+              <div class="cf-turnstile" :data-sitekey="siteKey" data-callback="onCaptchaVerified"></div>
+           </div>
         </div>
 
         <button 
