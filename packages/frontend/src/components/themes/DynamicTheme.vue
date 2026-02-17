@@ -166,11 +166,10 @@ const renderSection = (sectionId) => {
 
       <!-- 1-Column Layout -->
       <div 
-        v-if="config.layout !== '2-column' || forcedMobile || true" 
+        v-if="config.layout !== '2-column' || forcedMobile" 
         class="content-background p-8 space-y-8" 
         :class="{ 
-          'md:hidden': config.layout === '2-column' && !forcedMobile,
-          'block': forcedMobile
+          'md:hidden': config.layout === '2-column' && !forcedMobile
         }"
       >
         <template v-for="section in config.sectionOrder" :key="section">
