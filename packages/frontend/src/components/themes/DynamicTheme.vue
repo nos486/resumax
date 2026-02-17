@@ -383,11 +383,13 @@ const renderSection = (sectionId) => {
           </div>
         </div>
       </div>
-      <div class="text-center py-12 opacity-40 hover:opacity-100 transition-opacity">
-        <p class="text-xs text-secondary">
-          Built with <a href="/" class="text-accent font-bold hover:underline">Resumax</a>
-        </p>
-      </div>
+    </div>
+    
+    <!-- Footer - Outside the resume paper -->
+    <div class="text-center py-8 opacity-40 hover:opacity-100 transition-opacity">
+      <p class="text-xs text-secondary">
+        Built with <a href="/" class="text-accent font-bold hover:underline">Resumax</a>
+      </p>
     </div>
   </div>
 </template>
