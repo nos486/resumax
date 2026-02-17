@@ -26,7 +26,9 @@ import {
   Trash2,
   Image as ImageIcon,
   Link as LinkIcon,
-  GripVertical
+  GripVertical,
+  Smartphone,
+  Monitor
 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -35,6 +37,7 @@ const activeTab = ref('editor') // 'editor' or 'preview'
 const activeSection = ref('personal')
 const saving = ref(false)
 const isFullPreview = ref(false)
+const isPreviewMobile = ref(false)
 
 // Resizable Panel Logic
 const editorWidth = ref(450) // Default width in pixels
@@ -484,6 +487,26 @@ function removeCustomSection(index) {
             Live Preview
           </span>
           <div class="flex items-center gap-3">
+             <!-- Viewport Toggle -->
+             <div class="flex bg-gray-800 rounded-lg p-1 mr-2 border border-gray-700">
+               <button 
+                 @click="isPreviewMobile = false" 
+                 :class="!isPreviewMobile ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'"
+                 class="p-1.5 rounded-md transition-all duration-200"
+                 title="Desktop View"
+               >
+                 <Monitor class="w-4 h-4" />
+               </button>
+               <button 
+                 @click="isPreviewMobile = true" 
+                 :class="isPreviewMobile ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'"
+                 class="p-1.5 rounded-md transition-all duration-200"
+                 title="Mobile View"
+               >
+                 <Smartphone class="w-4 h-4" />
+               </button>
+             </div>
+
              <button @click="toggleFullPreview" class="text-[10px] font-bold border border-gray-700 bg-gray-800 hover:bg-gray-700 text-gray-300 px-4 py-1.5 rounded-full transition-all flex items-center gap-2 shadow-lg">
                <component :is="isFullPreview ? ChevronRight : ChevronLeft" class="w-3.5 h-3.5" />
                {{ isFullPreview ? 'Exit Full View' : 'Full Page View' }}
@@ -491,11 +514,21 @@ function removeCustomSection(index) {
           </div>
         </div>
 
-        <div class="flex-1 overflow-y-auto custom-scrollbar" :style="{ backgroundColor: resume.content?.themeConfig?.colors?.background || '#f3f4f6' }">
-          <div class="min-h-full py-8 px-4 flex justify-center items-start">
-            <div class="w-full max-w-5xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] overflow-hidden ring-1 ring-black/5 bg-white transition-all duration-300">
-               <DynamicTheme :resume="resume" class="pointer-events-none" />
-            </div>
+        <div class="flex-1 overflow-y-auto custom-scrollbar transition-all duration-500 flex justify-center items-start" :style="{ backgroundColor: resume.content?.themeConfig?.colors?.background || '#f3f4f6' }">
+          <div 
+            :class="[
+              isPreviewMobile 
+                ? 'w-[375px] my-12 mx-auto border-[12px] border-gray-900 rounded-[3rem] shadow-[0_0_0_2px_#1f2937,0_20px_50px_rgba(0,0,0,0.3)] aspect-[9/19] h-auto max-h-[750px] overflow-hidden sticky top-8' 
+                : 'w-full max-w-5xl my-8 mx-4 shadow-[0_20px_50px_rgba(0,0,0,0.15)] ring-1 ring-black/5'
+            ]"
+            class="bg-white transition-all duration-500 relative flex flex-col"
+          >
+             <!-- Mobile Notch Simulation -->
+             <div v-if="isPreviewMobile" class="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-gray-900 rounded-b-2xl z-20"></div>
+             
+             <div :class="isPreviewMobile ? 'overflow-y-auto flex-1' : ''" class="custom-scrollbar">
+                <DynamicTheme :resume="resume" class="pointer-events-none" />
+             </div>
           </div>
         </div>
       </div>
