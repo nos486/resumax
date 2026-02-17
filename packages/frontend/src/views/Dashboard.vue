@@ -20,15 +20,15 @@ const resume = reactive({
     },
     experience: [],
     education: [],
-    skills: [] // Now array of categories: { category: 'Frontend', items: [{ name: 'Vue', icon: 'Smile' }] }
-  },
-  customization: {
-    colors: {
-      primary: '#2563eb',
-      background: '#ffffff',
-      text: '#1f2937'
-    },
-    layout: ['summary', 'experience', 'education', 'skills']
+    skills: [],
+    customization: {
+      colors: {
+        primary: '#2563eb',
+        background: '#ffffff',
+        text: '#1f2937'
+      },
+      layout: ['summary', 'experience', 'education', 'skills']
+    }
   }
 })
 
@@ -36,21 +36,20 @@ onMounted(async () => {
   try {
     const data = await api.getResume()
     if (data) {
-      resume.slug = data.slug || ''
+      resume.slug = data.slug
       resume.theme = data.theme || 'modern'
+      
       // Merge content to ensure structure exists
       if (data.content) {
         resume.content = { ...resume.content, ...data.content }
-      }
-      // Merge customization
-      if (data.customization) {
-        resume.customization = { ...resume.customization, ...data.customization }
-      } else {
-        // Defaults if missing
-         resume.customization = {
-            colors: { primary: '#2563eb', background: '#ffffff', text: '#1f2937' },
-            layout: ['summary', 'experience', 'education', 'skills']
-         }
+        
+        // Ensure customization exists if loading old data
+        if (!resume.content.customization) {
+           resume.content.customization = {
+              colors: { primary: '#2563eb', background: '#ffffff', text: '#1f2937' },
+              layout: ['summary', 'experience', 'education', 'skills']
+           }
+        }
       }
     }
   } catch (e) {
@@ -66,8 +65,7 @@ async function saveResume() {
     await api.updateResume({
       slug: resume.slug,
       theme: resume.theme,
-      content: resume.content,
-      customization: resume.customization
+      content: resume.content
     })
     toast.success('Resume saved successfully!')
   } catch (e) {

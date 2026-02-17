@@ -20,11 +20,6 @@ resume.get('/', async (c) => {
         if (typeof resume.content === 'string') {
             resume.content = JSON.parse(resume.content)
         }
-        if (typeof resume.customization === 'string') {
-            resume.customization = JSON.parse(resume.customization)
-        } else if (!resume.customization) {
-            resume.customization = {}
-        }
     } catch (e) { }
 
     return c.json(resume)
@@ -32,20 +27,19 @@ resume.get('/', async (c) => {
 
 resume.put('/', async (c) => {
     const user = c.get('user')
-    const { content, theme, slug, customization } = await c.req.json()
+    const { content, theme, slug } = await c.req.json()
 
     const existing = await c.env.DB.prepare(
         'SELECT id FROM resumes WHERE user_id = ?'
     ).bind(user.id).first()
 
     const contentJson = JSON.stringify(content || {})
-    const customizationJson = JSON.stringify(customization || {})
 
     let result
     if (existing) {
         result = await c.env.DB.prepare(
-            'UPDATE resumes SET content = ?, customization = ?, theme = ?, slug = ?, updated_at = unixepoch() WHERE user_id = ?'
-        ).bind(contentJson, customizationJson, theme, slug, user.id).run()
+            'UPDATE resumes SET content = ?, theme = ?, slug = ?, updated_at = unixepoch() WHERE user_id = ?'
+        ).bind(contentJson, theme, slug, user.id).run()
     } else {
         const slugCheck = await c.env.DB.prepare(
             'SELECT id FROM resumes WHERE slug = ?'
@@ -56,8 +50,8 @@ resume.put('/', async (c) => {
         }
 
         result = await c.env.DB.prepare(
-            'INSERT INTO resumes (user_id, slug, content, customization, theme) VALUES (?, ?, ?, ?, ?)'
-        ).bind(user.id, slug, contentJson, customizationJson, theme || 'modern').run()
+            'INSERT INTO resumes (user_id, slug, content, theme) VALUES (?, ?, ?, ?)'
+        ).bind(user.id, slug, contentJson, theme || 'modern').run()
     }
 
     if (!result.success) {

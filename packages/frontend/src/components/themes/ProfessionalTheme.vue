@@ -12,7 +12,7 @@ const renderIcon = (name) => {
 }
 
 const themeStyles = computed(() => {
-  const colors = props.resume?.customization?.colors || {}
+  const colors = props.resume?.content?.customization?.colors || {}
   return {
     '--primary': colors.primary || '#000000',
     '--bg': colors.background || '#ffffff',
@@ -21,7 +21,7 @@ const themeStyles = computed(() => {
 })
 
 const layoutOrder = computed(() => {
-  return props.resume?.customization?.layout || ['summary', 'experience', 'education', 'skills']
+  return props.resume?.content?.customization?.layout || ['summary', 'experience', 'education', 'skills']
 })
 </script>
 

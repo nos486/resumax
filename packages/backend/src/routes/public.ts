@@ -7,7 +7,7 @@ publicRoute.get('/:slug', async (c) => {
     const slug = c.req.param('slug')
 
     const resume = await c.env.DB.prepare(
-        'SELECT content, customization, theme, slug, updated_at FROM resumes WHERE slug = ?'
+        'SELECT content, theme, slug, updated_at FROM resumes WHERE slug = ?'
     ).bind(slug).first()
 
     if (!resume) {
@@ -17,11 +17,6 @@ publicRoute.get('/:slug', async (c) => {
     try {
         if (typeof resume.content === 'string') {
             resume.content = JSON.parse(resume.content)
-        }
-        if (typeof resume.customization === 'string') {
-            resume.customization = JSON.parse(resume.customization)
-        } else if (!resume.customization) {
-            resume.customization = {}
         }
     } catch (e) { }
 
