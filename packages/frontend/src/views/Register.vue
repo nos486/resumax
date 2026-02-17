@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '../lib/api'
 import { toast } from '../lib/toast'
@@ -16,6 +16,27 @@ window.onCaptchaVerified = (token) => {
 const captchaToken = ref('')
 
 const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY || '0x4AAAAAAA-placeholder'
+
+onMounted(() => {
+  // Wait for Turnstile script to load, then render the widget
+  const renderTurnstile = () => {
+    if (window.turnstile) {
+      const container = document.querySelector('.cf-turnstile')
+      if (container && !container.hasChildNodes()) {
+        window.turnstile.render('.cf-turnstile', {
+          sitekey: siteKey,
+          callback: (token) => {
+            captchaToken.value = token
+          }
+        })
+      }
+    } else {
+      // Retry if script hasn't loaded yet
+      setTimeout(renderTurnstile, 100)
+    }
+  }
+  renderTurnstile()
+})
 
 async function handleRegister() {
   if (!captchaToken.value) {
