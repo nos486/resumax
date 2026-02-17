@@ -45,7 +45,16 @@ const config = computed(() => {
     }
   }
 
-  // Ensure columnAssignment exists and includes certifications
+  // Robustness: Ensure custom sections are in sectionOrder
+  if (props.resume.content?.customSections?.length > 0) {
+    props.resume.content.customSections.forEach(s => {
+      if (!merged.sectionOrder.includes(s.id)) {
+        merged.sectionOrder.push(s.id)
+      }
+    })
+  }
+
+  // Ensure columnAssignment exists and includes sections
   if (!merged.columnAssignment) {
     merged.columnAssignment = {
       leftColumn: ['bio', 'skills', 'certifications'],
@@ -59,6 +68,16 @@ const config = computed(() => {
       if (!inColumns) {
         merged.columnAssignment.leftColumn.push('certifications')
       }
+    }
+    // Ensure custom sections are in columns
+    if (props.resume.content?.customSections?.length > 0) {
+      props.resume.content.customSections.forEach(s => {
+        const inColumns = merged.columnAssignment.leftColumn.includes(s.id) || 
+                          merged.columnAssignment.rightColumn.includes(s.id)
+        if (!inColumns) {
+          merged.columnAssignment.leftColumn.push(s.id)
+        }
+      })
     }
   }
 
