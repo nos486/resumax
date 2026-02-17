@@ -34,6 +34,7 @@ const loading = ref(true)
 const activeTab = ref('editor') // 'editor' or 'preview'
 const activeSection = ref('personal')
 const saving = ref(false)
+const isFullPreview = ref(false)
 
 // Resizable Panel Logic
 const editorWidth = ref(450) // Default width in pixels
@@ -62,6 +63,13 @@ const stopResizing = () => {
   document.removeEventListener('mouseup', stopResizing)
   document.body.style.cursor = 'default'
   document.body.style.userSelect = 'auto'
+}
+
+const toggleFullPreview = () => {
+  isFullPreview.value = !isFullPreview.value
+  if (isFullPreview.value) {
+    // Hidden via v-show, but we can set 0 for logic consistency
+  }
 }
 
 const resume = reactive({
@@ -214,7 +222,7 @@ function removeCustomSection(index) {
 <template>
   <div class="h-screen bg-gray-950 text-gray-200 flex flex-col overflow-hidden">
     <!-- Top Navbar -->
-    <nav class="bg-gray-900 border-b border-gray-800 px-6 py-3 flex justify-between items-center z-40 shadow-2xl relative">
+    <nav class="bg-gray-900 border-b border-gray-800 px-6 py-3 flex justify-between items-center z-50 shadow-2xl relative">
       <div class="flex items-center gap-3">
         <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/20">R</div>
         <h1 class="text-lg font-bold text-white hidden sm:block">Resumax</h1>
@@ -251,7 +259,7 @@ function removeCustomSection(index) {
     <main v-else class="flex-1 flex overflow-hidden relative">
       
       <!-- 1. Left Navigation Sidebar (Desktop Only) -->
-      <aside class="hidden md:flex w-16 flex-col items-center py-6 bg-gray-900 border-r border-gray-800 z-30 space-y-6">
+      <aside :class="isFullPreview ? 'hidden' : 'hidden md:flex'" class="w-16 flex-col items-center py-6 bg-gray-900 border-r border-gray-800 z-30 space-y-6">
         <button @click="activeSection = 'personal'" :class="activeSection === 'personal' ? 'text-blue-500 bg-blue-500/10' : 'text-gray-500 hover:text-gray-300'" class="p-3 rounded-xl transition" title="Personal Info">
           <User class="w-6 h-6" />
         </button>
@@ -281,6 +289,7 @@ function removeCustomSection(index) {
 
       <!-- 2. Middle Editor Panel -->
       <div 
+        v-show="!isFullPreview"
         :class="activeTab === 'editor' ? 'flex' : 'hidden md:flex'"
         :style="{ width: editorWidth + 'px' }"
         class="flex-col h-full bg-gray-900 border-r border-gray-800 z-20 overflow-hidden transition-all duration-75 relative"
@@ -306,7 +315,6 @@ function removeCustomSection(index) {
         <!-- Editor Content -->
         <div class="flex-1 overflow-y-auto p-6 custom-scrollbar pb-20">
           
-          <!-- Section Forms -->
           <div v-if="activeSection === 'personal'" class="space-y-6">
             <div class="flex gap-6 items-start">
                <div class="relative group cursor-pointer" @click="$refs.fileInput.click()">
@@ -314,7 +322,7 @@ function removeCustomSection(index) {
                   <img v-if="resume.content.personalInfo.image" :src="resume.content.personalInfo.image" class="w-full h-full object-cover" />
                   <ImageIcon v-else class="w-8 h-8 text-gray-700" />
                 </div>
-                <div class="absolute inset-0 bg-blue-600/20 opacity-0 group-hover:opacity-100 flex items-center justify-center rounded-2xl transition">
+                <div class="absolute inset-0 bg-blue-600/20 opacity-0 group-hover:opacity-100 flex items-center justify-center rounded-2xl transition shadow-lg">
                   <Plus class="w-6 h-6 text-white" />
                 </div>
                 <input ref="fileInput" type="file" @change="handleImageUpload" class="hidden" accept="image/*" />
@@ -349,7 +357,7 @@ function removeCustomSection(index) {
           </div>
 
           <div v-if="activeSection === 'experience'" class="space-y-6">
-            <div v-for="(exp, i) in resume.content.experience" :key="i" class="relative bg-gray-950/50 p-6 rounded-2xl border border-gray-800 group shadow-lg">
+            <div v-for="(exp, i) in resume.content.experience" :key="i" class="relative bg-gray-950/50 p-6 rounded-2xl border border-gray-800 group shadow-lg transition-all hover:bg-gray-900/50">
               <button @click="removeExperience(i)" class="absolute top-4 right-4 text-gray-700 hover:text-red-500 opacity-0 group-hover:opacity-100 transition"><Trash2 class="w-4 h-4" /></button>
               <div class="flex gap-4 mb-4">
                 <IconPicker v-model="exp.icon" />
@@ -359,7 +367,7 @@ function removeCustomSection(index) {
                 </div>
               </div>
               <input v-model="exp.date" placeholder="Date Range" class="w-full bg-gray-950 border border-gray-800 rounded-xl py-2 px-3 text-xs mb-3 outline-none" />
-              <textarea v-model="exp.description" placeholder="Description of your role and achievements..." rows="3" class="w-full bg-gray-950 border border-gray-800 rounded-xl py-2 px-3 text-xs outline-none focus:border-blue-500"></textarea>
+              <textarea v-model="exp.description" placeholder="Description of your role and achievements..." rows="4" class="w-full bg-gray-950 border border-gray-800 rounded-xl py-2 px-3 text-xs outline-none focus:border-blue-500"></textarea>
             </div>
             <button @click="addExperience" class="w-full py-4 border-2 border-dashed border-gray-800 rounded-2xl text-gray-500 hover:text-blue-500 hover:border-blue-500/50 transition font-bold text-sm">
               + Add Experience
@@ -421,7 +429,7 @@ function removeCustomSection(index) {
             <div v-for="(section, i) in resume.content.customSections" :key="i" class="relative bg-gray-950/50 p-6 rounded-2xl border border-gray-800 group shadow-lg">
               <button @click="removeCustomSection(i)" class="absolute top-4 right-4 text-gray-700 hover:text-red-500 opacity-0 group-hover:opacity-100 transition"><Trash2 class="w-4 h-4" /></button>
               <input v-model="section.title" placeholder="Section Title" class="w-full bg-gray-950 border border-gray-800 rounded-xl py-2 px-3 text-sm font-bold mb-4 outline-none" />
-              <textarea v-model="section.content" placeholder="Content... Supports basic text and returns." rows="6" class="w-full bg-gray-950 border border-gray-800 rounded-xl py-2 px-3 text-xs outline-none resize-none"></textarea>
+              <textarea v-model="section.content" placeholder="Content... Supports basic text and returns." rows="8" class="w-full bg-gray-950 border border-gray-800 rounded-xl py-2 px-3 text-xs outline-none resize-none"></textarea>
             </div>
             <button @click="addCustomSection" class="w-full py-4 border-2 border-dashed border-gray-800 rounded-2xl text-gray-500 hover:text-pink-500 hover:border-pink-500/50 transition font-bold text-sm">
               + Add Custom Section
@@ -448,8 +456,9 @@ function removeCustomSection(index) {
 
       <!-- 3. Draggable Divider (Desktop Only) -->
       <div 
+        v-if="!isFullPreview"
         @mousedown="startResizing"
-        class="hidden md:flex w-1.5 h-full bg-gray-800/20 hover:bg-blue-600/50 cursor-col-resize z-30 transition-colors group relative"
+        class="hidden md:flex w-1.5 h-full bg-gray-800/20 hover:bg-blue-600/50 cursor-col-resize z-30 transition-colors group relative shadow-[inset_0_0_10px_rgba(0,0,0,0.5)]"
       >
         <div class="absolute inset-y-0 left-1/2 -translate-x-1/2 w-4 h-12 bg-gray-800 rounded-full my-auto opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity border border-gray-700 pointer-events-none">
           <GripVertical class="w-3 h-3 text-gray-400" />
@@ -462,20 +471,23 @@ function removeCustomSection(index) {
         class="flex-1 flex flex-col bg-gray-950 relative overflow-hidden transition-all duration-300"
       >
         <!-- Preview Tools -->
-        <div class="h-14 border-b border-gray-800 bg-gray-900/50 px-6 flex items-center justify-between">
+        <div class="h-14 border-b border-gray-800 bg-gray-900/50 px-6 flex items-center justify-between z-10">
           <span class="text-[10px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2">
             <div class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
             Live Preview
           </span>
-          <div class="flex items-center gap-2">
-            <div class="text-[10px] text-gray-500 mr-2">Rendering in browser</div>
+          <div class="flex items-center gap-3">
+             <button @click="toggleFullPreview" class="text-[10px] font-bold border border-gray-700 bg-gray-800 hover:bg-gray-700 text-gray-300 px-4 py-1.5 rounded-full transition-all flex items-center gap-2 shadow-lg">
+               <component :is="isFullPreview ? ChevronRight : ChevronLeft" class="w-3.5 h-3.5" />
+               {{ isFullPreview ? 'Exit Full View' : 'Full Page View' }}
+             </button>
           </div>
         </div>
 
         <!-- Preview content -->
         <div class="flex-1 overflow-y-auto custom-scrollbar bg-[radial-gradient(#ffffff05_1px,transparent_1px)] [background-size:20px_20px]">
-          <div class="min-h-full p-8 lg:p-12 xl:p-16 flex justify-center">
-            <div class="w-full max-w-[850px] shadow-[0_35px_60px_-15px_rgba(0,0,0,0.6)] origin-top hover:scale-[1.01] transition-transform duration-500">
+          <div class="min-h-full p-8 lg:p-12 xl:p-20 flex justify-center">
+            <div class="w-full max-w-[850px] shadow-[0_45px_100px_-20px_rgba(0,0,0,0.8)] origin-top hover:scale-[1.01] transition-transform duration-500">
                <DynamicTheme :resume="resume" class="pointer-events-none" />
             </div>
           </div>
@@ -494,7 +506,6 @@ function removeCustomSection(index) {
 .custom-scrollbar::-webkit-scrollbar-thumb { background: #374151; border-radius: 10px; }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #4b5563; }
 
-/* Transitions for section switching */
 .flex-1 {
   scrollbar-gutter: stable;
 }
