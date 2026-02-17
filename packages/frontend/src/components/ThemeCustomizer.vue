@@ -352,62 +352,72 @@ function moveSection(sectionId, from, to) {
     </div>
 
     <!-- Section Order / Column Assignment -->
+    <!-- Section Order / Column Assignment -->
     <div>
-      <h3 class="text-sm font-bold text-gray-300 mb-2">
-        {{ config.layout === '2-column' ? 'Column Assignment' : 'Section Order (Drag to Reorder)' }}
-      </h3>
+      <h3 class="text-sm font-bold text-gray-300 mb-2">Section Layout</h3>
       
-      <!-- 1 Column Mode -->
-      <div v-if="config.layout === '1-column'" class="space-y-2">
-        <div 
-          v-for="(sectionId, index) in config.sectionOrder" 
-          :key="sectionId"
-          draggable="true"
-          @dragstart="onDragStart(index, 'main')"
-          @dragover="(e) => onDragOver(e, index, 'main')"
-          @dragend="onDragEnd"
-          class="bg-gray-700 p-3 rounded cursor-move hover:bg-gray-600 transition flex items-center gap-2"
-        >
-          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-          </svg>
-          <span class="text-white text-sm">{{ getSectionLabel(sectionId) }}</span>
-        </div>
-      </div>
+      <!-- Desktop Column Assignment (Only for 2-column) -->
+      <div v-if="config.layout === '2-column'" class="mb-6">
+        <h4 class="text-xs font-bold text-gray-400 uppercase mb-2">Desktop Layout (2 Columns)</h4>
+        <div class="grid grid-cols-2 gap-4">
+          <!-- Left Column -->
+          <div class="bg-gray-800 p-3 rounded border border-gray-700">
+            <h5 class="text-xs font-bold text-gray-500 uppercase mb-2 text-center">Left</h5>
+            <div class="space-y-2 min-h-[100px]" @dragover.prevent @drop="onDrop('leftColumn')">
+              <div 
+                v-for="(sectionId, index) in config.columnAssignment.leftColumn" 
+                :key="sectionId"
+                draggable="true"
+                @dragstart="onDragStart(index, 'leftColumn')"
+                class="bg-gray-700 p-2 rounded cursor-move hover:bg-gray-600 transition flex items-center justify-between gap-1"
+              >
+                <span class="text-white text-xs truncate">{{ getSectionLabel(sectionId) }}</span>
+                <button @click="moveSection(sectionId, 'leftColumn', 'rightColumn')" class="text-gray-400 hover:text-white text-xs">→</button>
+              </div>
+            </div>
+          </div>
 
-      <!-- 2 Column Mode -->
-      <div v-else class="grid grid-cols-2 gap-4">
-        <!-- Left Column -->
-        <div class="bg-gray-800 p-3 rounded border border-gray-700">
-          <h4 class="text-xs font-bold text-gray-400 uppercase mb-2 text-center">Left Column</h4>
-          <div class="space-y-2 min-h-[100px]" @dragover.prevent @drop="onDrop('leftColumn')">
-            <div 
-              v-for="(sectionId, index) in config.columnAssignment.leftColumn" 
-              :key="sectionId"
-              draggable="true"
-              @dragstart="onDragStart(index, 'leftColumn')"
-              class="bg-gray-700 p-2 rounded cursor-move hover:bg-gray-600 transition flex items-center justify-between gap-1"
-            >
-              <span class="text-white text-xs truncate">{{ getSectionLabel(sectionId) }}</span>
-              <button @click="moveSection(sectionId, 'leftColumn', 'rightColumn')" class="text-gray-400 hover:text-white text-xs">→</button>
+          <!-- Right Column -->
+          <div class="bg-gray-800 p-3 rounded border border-gray-700">
+            <h5 class="text-xs font-bold text-gray-500 uppercase mb-2 text-center">Right</h5>
+            <div class="space-y-2 min-h-[100px]" @dragover.prevent @drop="onDrop('rightColumn')">
+              <div 
+                v-for="(sectionId, index) in config.columnAssignment.rightColumn" 
+                :key="sectionId"
+                draggable="true"
+                @dragstart="onDragStart(index, 'rightColumn')"
+                class="bg-gray-700 p-2 rounded cursor-move hover:bg-gray-600 transition flex items-center justify-between gap-1"
+              >
+                <button @click="moveSection(sectionId, 'rightColumn', 'leftColumn')" class="text-gray-400 hover:text-white text-xs">←</button>
+                <span class="text-white text-xs truncate">{{ getSectionLabel(sectionId) }}</span>
+              </div>
             </div>
           </div>
         </div>
+      </div>
 
-        <!-- Right Column -->
-        <div class="bg-gray-800 p-3 rounded border border-gray-700">
-          <h4 class="text-xs font-bold text-gray-400 uppercase mb-2 text-center">Right Column</h4>
-          <div class="space-y-2 min-h-[100px]" @dragover.prevent @drop="onDrop('rightColumn')">
-            <div 
-              v-for="(sectionId, index) in config.columnAssignment.rightColumn" 
-              :key="sectionId"
-              draggable="true"
-              @dragstart="onDragStart(index, 'rightColumn')"
-              class="bg-gray-700 p-2 rounded cursor-move hover:bg-gray-600 transition flex items-center justify-between gap-1"
-            >
-              <button @click="moveSection(sectionId, 'rightColumn', 'leftColumn')" class="text-gray-400 hover:text-white text-xs">←</button>
-              <span class="text-white text-xs truncate">{{ getSectionLabel(sectionId) }}</span>
-            </div>
+      <!-- Mobile / Linear Order -->
+      <div>
+        <h4 class="text-xs font-bold text-gray-400 uppercase mb-2">
+          {{ config.layout === '2-column' ? 'Mobile Order (Stacked)' : 'Section Order' }}
+        </h4>
+        <p v-if="config.layout === '2-column'" class="text-xs text-gray-500 mb-2">
+          Arrangement for mobile devices and 1-column views.
+        </p>
+        <div class="space-y-2">
+          <div 
+            v-for="(sectionId, index) in config.sectionOrder" 
+            :key="sectionId"
+            draggable="true"
+            @dragstart="onDragStart(index, 'main')"
+            @dragover="(e) => onDragOver(e, index, 'main')"
+            @dragend="onDragEnd"
+            class="bg-gray-700 p-3 rounded cursor-move hover:bg-gray-600 transition flex items-center gap-2"
+          >
+            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+            <span class="text-white text-sm">{{ getSectionLabel(sectionId) }}</span>
           </div>
         </div>
       </div>

@@ -117,8 +117,8 @@ const renderSection = (sectionId) => {
         </div>
       </header>
 
-      <!-- 1-Column Layout -->
-      <div v-if="config.layout === '1-column'" class="content-background p-8 space-y-8">
+      <!-- 1-Column Layout (Mobile & Desktop if selected) -->
+      <div v-if="true" class="content-background p-8 space-y-8" :class="{ 'md:hidden': config.layout === '2-column' }">
         <template v-for="section in config.sectionOrder" :key="section">
           <component :is="'div'" v-if="renderSection(section)">
             <section v-if="renderSection(section).type === 'bio'">
@@ -181,8 +181,8 @@ const renderSection = (sectionId) => {
         </template>
       </div>
 
-      <!-- 2-Column Layout -->
-      <div v-else class="content-background p-8">
+      <!-- 2-Column Layout (Desktop only if selected) -->
+      <div v-if="config.layout === '2-column'" class="content-background p-8 hidden md:block">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
           <!-- Left Column -->
           <div class="md:col-span-1 space-y-6">
