@@ -196,7 +196,7 @@ const renderSection = (sectionId) => {
       <!-- Header -->
       <header class="header-gradient text-white p-8">
         <div class="flex flex-col md:flex-row items-center gap-6">
-          <img v-if="resume.content.personalInfo.image" :src="resume.content.personalInfo.image" class="w-40 h-40 md:w-40 md:h-40 rounded-full object-cover shadow-sm" />
+          <img v-if="resume.content.personalInfo.image" :src="resume.content.personalInfo.image" class="w-48 h-48 md:w-40 md:h-40 rounded-full border-4 border-white/30 md:border-0 object-cover shadow-sm" />
           <div class="text-center md:text-left flex-1">
             <h1 class="text-4xl font-bold mb-2">{{ resume.content.personalInfo.name }}</h1>
             <p class="text-xl opacity-90 mb-4">{{ resume.content.personalInfo.title }}</p>
