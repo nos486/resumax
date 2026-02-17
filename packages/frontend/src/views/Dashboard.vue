@@ -26,7 +26,8 @@ import {
   Trash2,
   Image as ImageIcon,
   Link as LinkIcon,
-  GripVertical
+  GripVertical,
+  Download
 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -71,6 +72,10 @@ const toggleFullPreview = () => {
   if (isFullPreview.value) {
     // Hidden via v-show, but we can set 0 for logic consistency
   }
+}
+
+const exportToPDF = () => {
+  window.print()
 }
 
 const resume = reactive({
@@ -485,6 +490,10 @@ function removeCustomSection(index) {
             Live Preview
           </span>
           <div class="flex items-center gap-3">
+              <button v-if="isFullPreview" @click="exportToPDF" class="text-[10px] font-bold border border-blue-600 bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 rounded-full transition-all flex items-center gap-2 shadow-lg">
+                <Download class="w-3.5 h-3.5" />
+                Download PDF
+              </button>
              <button @click="toggleFullPreview" class="text-[10px] font-bold border border-gray-700 bg-gray-800 hover:bg-gray-700 text-gray-300 px-4 py-1.5 rounded-full transition-all flex items-center gap-2 shadow-lg">
                <component :is="isFullPreview ? ChevronRight : ChevronLeft" class="w-3.5 h-3.5" />
                {{ isFullPreview ? 'Exit Full View' : 'Full Page View' }}
@@ -515,5 +524,33 @@ function removeCustomSection(index) {
 
 .flex-1 {
   scrollbar-gutter: stable;
+}
+
+/* Print styles for PDF export */
+@media print {
+  /* Hide everything except the resume content */
+  nav, aside, .h-14, button {
+    display: none !important;
+  }
+  
+  /* Remove all backgrounds, borders, and rounded corners */
+  body, html, * {
+    background: white !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+  
+  /* Ensure full width for resume */
+  .flex-1, .max-w-5xl {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  
+  /* Remove page margins */
+  @page {
+    margin: 0;
+    size: A4;
+  }
 }
 </style>
