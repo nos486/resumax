@@ -6,6 +6,7 @@ import { toast } from '../lib/toast'
 import IconPicker from '../components/IconPicker.vue'
 import ThemeCustomizer from '../components/ThemeCustomizer.vue'
 import DynamicTheme from '../components/themes/DynamicTheme.vue'
+import html2canvas from 'html2canvas'
 import { 
   Settings, 
   Palette, 
@@ -74,8 +75,42 @@ const toggleFullPreview = () => {
   }
 }
 
-const exportToPDF = () => {
-  window.print()
+const exportToPDF = async () => {
+  try {
+    // Find the resume content element
+    const resumeElement = document.querySelector('.dynamic-theme')
+    if (!resumeElement) {
+      toast.error('Resume not found')
+      return
+    }
+
+    toast.info('Generating image... Please wait')
+
+    // Capture the entire resume as canvas
+    const canvas = await html2canvas(resumeElement, {
+      scale: 2, // Higher quality
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#ffffff',
+      logging: false,
+      windowWidth: resumeElement.scrollWidth,
+      windowHeight: resumeElement.scrollHeight
+    })
+
+    // Convert to JPG and download
+    canvas.toBlob((blob) => {
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.download = `${resume.content.personalInfo.name || 'resume'}_CV.jpg`
+      link.href = url
+      link.click()
+      URL.revokeObjectURL(url)
+      toast.success('CV downloaded successfully!')
+    }, 'image/jpeg', 0.95)
+  } catch (error) {
+    console.error('Export error:', error)
+    toast.error('Failed to export CV')
+  }
 }
 
 const resume = reactive({
@@ -492,7 +527,7 @@ function removeCustomSection(index) {
           <div class="flex items-center gap-3">
               <button v-if="isFullPreview" @click="exportToPDF" class="text-[10px] font-bold border border-blue-600 bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 rounded-full transition-all flex items-center gap-2 shadow-lg">
                 <Download class="w-3.5 h-3.5" />
-                Download PDF
+                Download as JPG
               </button>
              <button @click="toggleFullPreview" class="text-[10px] font-bold border border-gray-700 bg-gray-800 hover:bg-gray-700 text-gray-300 px-4 py-1.5 rounded-full transition-all flex items-center gap-2 shadow-lg">
                <component :is="isFullPreview ? ChevronRight : ChevronLeft" class="w-3.5 h-3.5" />

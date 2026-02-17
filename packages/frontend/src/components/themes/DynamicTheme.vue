@@ -191,7 +191,7 @@ const renderSection = (sectionId) => {
 
 <template>
   <div :style="cssVars" class="dynamic-theme min-h-full">
-    <div class="w-full overflow-hidden" :class="borderClass">
+    <div class="w-full overflow-hidden rounded-none">
       
       <!-- Header -->
       <header class="header-gradient text-white p-8">
