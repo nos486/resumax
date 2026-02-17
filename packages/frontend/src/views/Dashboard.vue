@@ -171,14 +171,33 @@ function removeSkillItem(catIdx, itemIdx) { resume.content.skills[catIdx].items.
 
 function addCustomSection() {
   const id = `custom-${Date.now()}`
+  if (!resume.content.customSections) resume.content.customSections = []
   resume.content.customSections.push({ id, title: 'New Section', content: '' })
+  
+  // Add to order lists
   resume.content.themeConfig.sectionOrder.push(id)
+  if (resume.content.themeConfig.columnAssignment) {
+    resume.content.themeConfig.columnAssignment.leftColumn.push(id)
+  }
 }
 function removeCustomSection(index) {
   const section = resume.content.customSections[index]
+  if (!section) return
+  
   resume.content.customSections.splice(index, 1)
+  
+  // Remove from sectionOrder
   const orderIdx = resume.content.themeConfig.sectionOrder.indexOf(section.id)
   if (orderIdx > -1) resume.content.themeConfig.sectionOrder.splice(orderIdx, 1)
+  
+  // Remove from columnAssignment
+  if (resume.content.themeConfig.columnAssignment) {
+    const leftIdx = resume.content.themeConfig.columnAssignment.leftColumn.indexOf(section.id)
+    if (leftIdx > -1) resume.content.themeConfig.columnAssignment.leftColumn.splice(leftIdx, 1)
+    
+    const rightIdx = resume.content.themeConfig.columnAssignment.rightColumn.indexOf(section.id)
+    if (rightIdx > -1) resume.content.themeConfig.columnAssignment.rightColumn.splice(rightIdx, 1)
+  }
 }
 </script>
 
