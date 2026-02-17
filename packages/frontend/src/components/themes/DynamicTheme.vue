@@ -358,6 +358,24 @@ const renderSection = (sectionId) => {
                   </div>
                 </section>
 
+                <section v-else-if="renderSection(section).type === 'experience'" class="mb-6">
+                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 section-title-sm">Experience</h3>
+                  <div class="space-y-4">
+                    <div v-for="(exp, index) in renderSection(section).data" :key="index" :class="getExperienceItemClass()">
+                      <div v-if="showExperienceDot()" class="absolute -left-[9px] top-0 w-4 h-4 rounded-full accent-dot"></div>
+                      <div class="flex flex-col mb-1">
+                        <h4 class="text-sm font-bold text-primary flex items-center gap-2">
+                          <component :is="renderIcon(exp.icon)" v-if="config.showIcons && exp.icon" class="w-4 h-4" />
+                          {{ exp.title }}
+                        </h4>
+                        <span class="text-xs text-secondary font-medium">{{ exp.date }}</span>
+                      </div>
+                      <div class="text-accent text-xs font-semibold mb-1">{{ exp.company }}</div>
+                      <p class="text-content text-xs leading-relaxed whitespace-pre-line break-words text-justify hyphens-auto">{{ exp.description }}</p>
+                    </div>
+                  </div>
+                </section>
+
                 <section v-else-if="renderSection(section).type === 'custom'" class="mb-6">
                   <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 section-title-sm">{{ renderSection(section).data.title }}</h3>
                   <div class="text-sm text-content leading-relaxed whitespace-pre-line break-words text-justify hyphens-auto">{{ renderSection(section).data.content }}</div>
