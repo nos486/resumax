@@ -227,7 +227,7 @@ const renderSection = (sectionId) => {
           <component :is="'div'" v-if="renderSection(section)">
             <section v-if="renderSection(section).type === 'bio'">
               <h2 class="section-heading">About Me</h2>
-              <p class="text-content leading-relaxed whitespace-pre-line break-words">{{ renderSection(section).data }}</p>
+              <p class="text-content leading-relaxed whitespace-pre-line break-words text-justify hyphens-auto">{{ renderSection(section).data }}</p>
             </section>
 
             <section v-else-if="renderSection(section).type === 'experience'">
@@ -243,7 +243,7 @@ const renderSection = (sectionId) => {
                     <span class="text-sm text-secondary font-medium">{{ exp.date }}</span>
                   </div>
                   <div class="text-accent font-medium mb-2">{{ exp.company }}</div>
-                  <p class="text-content text-sm whitespace-pre-line break-words">{{ exp.description }}</p>
+                  <p class="text-content text-sm whitespace-pre-line break-words text-justify hyphens-auto">{{ exp.description }}</p>
                 </div>
               </div>
             </section>
@@ -299,7 +299,7 @@ const renderSection = (sectionId) => {
 
             <section v-else-if="renderSection(section).type === 'custom'">
               <h2 class="section-heading">{{ renderSection(section).data.title }}</h2>
-              <div class="text-content leading-relaxed whitespace-pre-line">{{ renderSection(section).data.content }}</div>
+              <div class="text-content leading-relaxed whitespace-pre-line break-words text-justify hyphens-auto">{{ renderSection(section).data.content }}</div>
             </section>
           </component>
         </template>
@@ -314,7 +314,7 @@ const renderSection = (sectionId) => {
               <component :is="'div'" v-if="renderSection(section)">
                 <section v-if="renderSection(section).type === 'bio'" class="mb-6">
                   <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 section-title-sm">About</h3>
-                  <p class="text-sm leading-relaxed text-content whitespace-pre-line break-words">{{ renderSection(section).data }}</p>
+                  <p class="text-sm leading-relaxed text-content whitespace-pre-line break-words text-justify hyphens-auto">{{ renderSection(section).data }}</p>
                 </section>
 
                 <section v-else-if="renderSection(section).type === 'education'" class="mb-6">
@@ -360,7 +360,7 @@ const renderSection = (sectionId) => {
 
                 <section v-else-if="renderSection(section).type === 'custom'" class="mb-6">
                   <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 section-title-sm">{{ renderSection(section).data.title }}</h3>
-                  <div class="text-sm text-content leading-relaxed whitespace-pre-line">{{ renderSection(section).data.content }}</div>
+                  <div class="text-sm text-content leading-relaxed whitespace-pre-line break-words text-justify hyphens-auto">{{ renderSection(section).data.content }}</div>
                 </section>
               </component>
             </template>
@@ -383,14 +383,14 @@ const renderSection = (sectionId) => {
                         <span class="text-sm text-secondary font-medium">{{ exp.date }}</span>
                       </div>
                       <div class="text-accent font-semibold mb-2">{{ exp.company }}</div>
-                      <p class="text-content text-sm leading-relaxed whitespace-pre-line break-words">{{ exp.description }}</p>
+                      <p class="text-content text-sm leading-relaxed whitespace-pre-line break-words text-justify hyphens-auto">{{ exp.description }}</p>
                     </div>
                   </div>
                 </section>
 
                 <section v-else-if="renderSection(section).type === 'bio'">
                   <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 section-title-sm">About</h3>
-                  <p class="text-content leading-relaxed whitespace-pre-line break-words">{{ renderSection(section).data }}</p>
+                  <p class="text-content leading-relaxed whitespace-pre-line break-words text-justify hyphens-auto">{{ renderSection(section).data }}</p>
                 </section>
 
                 <section v-else-if="renderSection(section).type === 'education'">
@@ -436,7 +436,7 @@ const renderSection = (sectionId) => {
 
                 <section v-else-if="renderSection(section).type === 'custom'">
                   <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 section-title-sm">{{ renderSection(section).data.title }}</h3>
-                  <div class="text-content leading-relaxed whitespace-pre-line">{{ renderSection(section).data.content }}</div>
+                  <div class="text-content leading-relaxed whitespace-pre-line break-words text-justify hyphens-auto">{{ renderSection(section).data.content }}</div>
                 </section>
               </component>
             </template>
