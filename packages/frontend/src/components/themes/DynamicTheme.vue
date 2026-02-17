@@ -261,10 +261,13 @@ const renderSection = (sectionId) => {
 
                 <section v-else-if="renderSection(section).type === 'education'" class="mb-6">
                   <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 section-title-sm">Education</h3>
-                  <div class="space-y-4">
-                    <div v-for="(edu, index) in renderSection(section).data" :key="index">
-                      <div class="font-bold text-primary text-sm">{{ edu.school }}</div>
-                      <div class="text-xs text-content">{{ edu.degree }}</div>
+                  <div class="space-y-3">
+                    <div v-for="(edu, index) in renderSection(section).data" :key="index" class="bg-surface p-3 rounded-lg border border-gray-200 hover:shadow-md transition">
+                      <div class="font-bold text-primary text-sm flex items-center gap-2">
+                        <component :is="renderIcon(edu.icon)" v-if="config.showIcons && edu.icon" class="w-4 h-4" />
+                        {{ edu.school }}
+                      </div>
+                      <div class="text-xs text-content mt-1">{{ edu.degree }}</div>
                       <div class="text-xs text-secondary mt-1">{{ edu.date }}</div>
                     </div>
                   </div>
@@ -288,11 +291,11 @@ const renderSection = (sectionId) => {
                 <section v-else-if="renderSection(section).type === 'certifications'" class="mb-6">
                   <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 section-title-sm">Certifications</h3>
                   <div class="space-y-3">
-                    <div v-for="(cert, index) in renderSection(section).data" :key="index">
+                    <div v-for="(cert, index) in renderSection(section).data" :key="index" class="bg-surface p-3 rounded-lg border border-gray-200 hover:shadow-md transition">
                       <div class="font-bold text-primary text-sm">{{ cert.name }}</div>
-                      <div class="text-xs text-accent">{{ cert.issuer }}</div>
-                      <div class="text-xs text-secondary">{{ cert.date }}</div>
-                      <a v-if="cert.url" :href="cert.url" target="_blank" class="text-[10px] text-blue-500 hover:underline">View ↗</a>
+                      <div class="text-xs text-accent mt-1">{{ cert.issuer }}</div>
+                      <div class="text-xs text-secondary mt-1">{{ cert.date }}</div>
+                      <a v-if="cert.url" :href="cert.url" target="_blank" class="text-[10px] text-blue-500 hover:underline mt-1 inline-block">View ↗</a>
                     </div>
                   </div>
                 </section>
@@ -335,8 +338,11 @@ const renderSection = (sectionId) => {
                 <section v-else-if="renderSection(section).type === 'education'">
                   <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 section-title-sm">Education</h3>
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div v-for="(edu, index) in renderSection(section).data" :key="index" class="bg-surface p-4 rounded-lg border border-gray-200">
-                      <h4 class="font-bold text-primary">{{ edu.school }}</h4>
+                    <div v-for="(edu, index) in renderSection(section).data" :key="index" class="bg-surface p-4 rounded-lg border border-gray-200 hover:shadow-md transition">
+                      <h4 class="font-bold text-primary flex items-center gap-2">
+                        <component :is="renderIcon(edu.icon)" v-if="config.showIcons && edu.icon" class="w-4 h-4" />
+                        {{ edu.school }}
+                      </h4>
                       <div class="text-content text-sm">{{ edu.degree }}</div>
                       <div class="text-secondary text-xs mt-1">{{ edu.date }}</div>
                     </div>
@@ -361,7 +367,7 @@ const renderSection = (sectionId) => {
                 <section v-else-if="renderSection(section).type === 'certifications'">
                   <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 section-title-sm">Certifications</h3>
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div v-for="(cert, index) in renderSection(section).data" :key="index" class="bg-surface p-4 rounded-lg border border-gray-200">
+                    <div v-for="(cert, index) in renderSection(section).data" :key="index" class="bg-surface p-4 rounded-lg border border-gray-200 hover:shadow-md transition">
                       <h4 class="font-bold text-primary">{{ cert.name }}</h4>
                       <div class="text-accent text-sm font-medium">{{ cert.issuer }}</div>
                       <div class="text-secondary text-xs mt-1">{{ cert.date }}</div>
