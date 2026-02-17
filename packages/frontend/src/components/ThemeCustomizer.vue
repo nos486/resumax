@@ -63,6 +63,48 @@ const presets = {
     font: 'Roboto',
     layout: '1-column',
     borderRadius: 'none'
+  },
+  classic: {
+    colors: {
+      primary: '#1a365d',
+      secondary: '#2c5282',
+      background: '#fffaf0',
+      surface: '#ffffff',
+      text: '#2d3748',
+      textSecondary: '#4a5568',
+      accent: '#c53030'
+    },
+    font: 'Playfair Display',
+    layout: '1-column',
+    borderRadius: 'none'
+  },
+  swiss: {
+    colors: {
+      primary: '#d90429',
+      secondary: '#ef233c',
+      background: '#edf2f4',
+      surface: '#ffffff',
+      text: '#2b2d42',
+      textSecondary: '#8d99ae',
+      accent: '#d90429'
+    },
+    font: 'Inter',
+    layout: '2-column',
+    borderRadius: 'none'
+  },
+  terminal: {
+    colors: {
+      primary: '#00ff41',
+      secondary: '#008f11',
+      background: '#0d0208',
+      surface: '#0d0208',
+      text: '#00ff41',
+      textSecondary: '#008f11',
+      accent: '#003b00'
+    },
+    font: 'JetBrains Mono',
+    layout: '1-column',
+    borderRadius: 'none'
   }
 }
 
@@ -186,11 +228,15 @@ function moveSection(sectionId, from, to) {
     <!-- Presets -->
     <div>
       <h3 class="text-sm font-bold text-gray-300 mb-2">Quick Presets</h3>
-      <div class="grid grid-cols-2 gap-2">
-        <button @click="applyPreset('modern')" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium transition">Modern</button>
-        <button @click="applyPreset('professional')" class="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded text-sm font-medium transition">Professional</button>
-        <button @click="applyPreset('creative')" class="px-3 py-2 bg-pink-600 hover:bg-pink-700 text-white rounded text-sm font-medium transition">Creative</button>
-        <button @click="applyPreset('minimal')" class="px-3 py-2 bg-black hover:bg-gray-900 text-white rounded text-sm font-medium transition">Minimal</button>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <button v-for="(preset, name) in presets" :key="name" @click="applyPreset(name)" class="flex flex-col items-center gap-2 p-3 rounded-lg border border-gray-700 bg-gray-800 hover:bg-gray-750 hover:border-blue-500 transition group">
+           <div class="flex gap-1">
+             <div class="w-4 h-4 rounded-full" :style="{ background: preset.colors.primary }"></div>
+             <div class="w-4 h-4 rounded-full" :style="{ background: preset.colors.secondary }"></div>
+             <div class="w-4 h-4 rounded-full" :style="{ background: preset.colors.background }"></div>
+           </div>
+           <span class="text-xs font-medium text-gray-300 capitalize group-hover:text-white">{{ name }}</span>
+        </button>
       </div>
     </div>
 
