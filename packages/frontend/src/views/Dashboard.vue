@@ -230,10 +230,10 @@ function removeCustomSection(index) {
   <div class="h-screen bg-gray-950 text-gray-200 flex flex-col overflow-hidden">
     <!-- Top Navbar -->
     <nav class="bg-gray-900 border-b border-gray-800 px-6 py-3 flex justify-between items-center z-50 shadow-2xl relative">
-      <div class="flex items-center gap-3">
+      <router-link to="/" class="flex items-center gap-3 hover:opacity-80 transition">
         <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/20">R</div>
         <h1 class="text-lg font-bold text-white hidden sm:block">Resumax</h1>
-      </div>
+      </router-link>
 
       <!-- Mobile Tab Switcher -->
       <div class="md:hidden flex bg-gray-800 rounded-lg p-1">
