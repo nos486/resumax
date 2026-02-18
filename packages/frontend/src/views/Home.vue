@@ -83,11 +83,11 @@ import { Layout, Palette, FileDown, Github } from 'lucide-vue-next'
           &copy; {{ new Date().getFullYear() }} Resumax. All rights reserved.
         </div>
         
-        <div class="flex items-center gap-6">
-          <span class="text-gray-500 text-sm flex items-center gap-2">
-            Proudly Open Source 
-            <span class="text-red-500 animate-pulse">♥</span>
-          </span>
+        <div class="flex items-center gap-4">
+          <a href="/v/sina" target="_blank" class="text-blue-400 hover:text-blue-300 transition text-sm font-medium hover:underline">
+            View Sample Resume
+          </a>
+          <span class="text-gray-700 hidden sm:inline">|</span>
           <a href="https://github.com/nos486/resumax" target="_blank" class="text-gray-400 hover:text-white transition flex items-center gap-2 bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-full text-sm font-medium border border-gray-700">
             <Github class="w-4 h-4" />
             nos486/resumax
