@@ -28,6 +28,9 @@
       "database_id": "1229b901-0948-4e62-98dc-140b94fa2707"
     }
   ],
+  "vars": {
+    "FRONTEND_URL": "https://resumax.ir"
+  }
   // "ai": {
   //   "binding": "AI"
   // },
