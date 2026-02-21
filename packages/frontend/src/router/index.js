@@ -4,6 +4,7 @@ import Login from '../views/Login.vue'
 import Register from '../views/Register.vue'
 import Dashboard from '../views/Dashboard.vue'
 import PublicView from '../views/PublicView.vue'
+import GoogleCallback from '../views/GoogleCallback.vue'
 
 const routes = [
     { path: '/', component: Home },
@@ -11,6 +12,7 @@ const routes = [
     { path: '/register', component: Register, meta: { guestOnly: true } },
     { path: '/dashboard', component: Dashboard, meta: { requiresAuth: true } },
     { path: '/v/:slug', component: PublicView },
+    { path: '/auth/callback', component: GoogleCallback },
 ]
 
 const router = createRouter({

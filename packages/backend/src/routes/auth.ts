@@ -20,6 +20,17 @@ async function verifyTurnstile(token: string, secretKey: string) {
     return outcome.success;
 }
 
+// Shared helper to issue a JWT for a user
+async function issueToken(userId: number, email: string, jwtSecret: string) {
+    return sign({
+        id: userId,
+        email,
+        exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7, // 7 days
+    }, jwtSecret)
+}
+
+// ─── Email/Password Auth ──────────────────────────────────────────────────────
+
 auth.post('/register', async (c) => {
     const { email, password, captchaToken } = await c.req.json()
 
@@ -88,103 +99,107 @@ auth.post('/login', async (c) => {
         return c.json({ error: 'Invalid email or password' }, 401)
     }
 
-    const token = await sign({
-        id: user.id,
-        email: user.email,
-        exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7, // 7 days
-    }, c.env.JWT_SECRET)
+    const token = await issueToken(user.id, user.email, c.env.JWT_SECRET)
 
     return c.json({ token, user: { id: user.id, email: user.email } })
 })
 
+// ─── Google OAuth ─────────────────────────────────────────────────────────────
+
+// Step 1: Redirect user to Google consent page
 auth.get('/google', async (c) => {
-    if (!c.env.GOOGLE_CLIENT_ID || !c.env.FRONTEND_URL) {
-        return c.json({ error: 'Server misconfiguration: Google OAuth missing' }, 500)
+    if (!c.env.GOOGLE_CLIENT_ID) {
+        return c.json({ error: 'Google OAuth is not configured' }, 500)
     }
 
-    const redirectUri = `${new URL(c.req.url).origin}/api/auth/google/callback`
-    const scope = 'email profile'
-    const oauthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${c.env.GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&access_type=online`
+    const redirectUri = new URL('/api/auth/google/callback', new URL(c.req.url).origin).toString()
 
-    return c.redirect(oauthUrl)
+    const params = new URLSearchParams({
+        client_id: c.env.GOOGLE_CLIENT_ID,
+        redirect_uri: redirectUri,
+        response_type: 'code',
+        scope: 'openid email profile',
+        access_type: 'offline',
+        prompt: 'select_account',
+    })
+
+    return c.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`)
 })
 
+// Step 2: Handle Google callback — exchange code for user info, find-or-create account
 auth.get('/google/callback', async (c) => {
     const code = c.req.query('code')
-    if (!code) {
-        return c.json({ error: 'No code provided' }, 400)
+    const error = c.req.query('error')
+
+    const frontendUrl = c.env.FRONTEND_URL || 'http://localhost:5173'
+
+    if (error || !code) {
+        return c.redirect(`${frontendUrl}/auth/callback?error=${encodeURIComponent(error || 'No code returned')}`)
     }
 
-    if (!c.env.GOOGLE_CLIENT_ID || !c.env.GOOGLE_CLIENT_SECRET || !c.env.FRONTEND_URL || !c.env.JWT_SECRET) {
-        return c.json({ error: 'Server misconfiguration' }, 500)
+    if (!c.env.GOOGLE_CLIENT_ID || !c.env.GOOGLE_CLIENT_SECRET || !c.env.JWT_SECRET) {
+        return c.redirect(`${frontendUrl}/auth/callback?error=${encodeURIComponent('Server misconfiguration')}`)
     }
 
-    const redirectUri = `${new URL(c.req.url).origin}/api/auth/google/callback`
+    const redirectUri = new URL('/api/auth/google/callback', new URL(c.req.url).origin).toString()
 
-    try {
-        // Exchange code for token
-        const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams({
-                code,
-                client_id: c.env.GOOGLE_CLIENT_ID,
-                client_secret: c.env.GOOGLE_CLIENT_SECRET,
-                redirect_uri: redirectUri,
-                grant_type: 'authorization_code'
-            })
-        })
+    // Exchange code for tokens
+    const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+            code,
+            client_id: c.env.GOOGLE_CLIENT_ID,
+            client_secret: c.env.GOOGLE_CLIENT_SECRET,
+            redirect_uri: redirectUri,
+            grant_type: 'authorization_code',
+        }),
+    })
 
-        const tokenData = await tokenRes.json() as { access_token?: string, error?: string }
+    const tokenData = await tokenRes.json() as { access_token?: string; error?: string }
 
-        if (tokenData.error || !tokenData.access_token) {
-            return c.json({ error: 'Failed to exchange token' }, 400)
-        }
-
-        // Fetch user info
-        const userRes = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
-            headers: { Authorization: `Bearer ${tokenData.access_token}` }
-        })
-
-        const userData = await userRes.json() as { email?: string, id?: string }
-
-        if (!userData.email) {
-            return c.json({ error: 'Failed to retrieve email from Google' }, 400)
-        }
-
-        const email = userData.email
-
-        // Check user exists
-        let user = await c.env.DB.prepare(
-            'SELECT * FROM users WHERE email = ?'
-        ).bind(email).first<{ id: number; email: string; password_hash: string }>()
-
-        if (!user) {
-            // Create user with dummy password hash for OAuth users
-            const passwordHash = await bcrypt.hash(Math.random().toString(36) + Math.random().toString(36), 10)
-            const result = await c.env.DB.prepare(
-                'INSERT INTO users (email, password_hash) VALUES (?, ?) RETURNING id, email'
-            ).bind(email, passwordHash).first<{ id: number; email: string }>()
-
-            if (!result) {
-                return c.json({ error: 'Failed to create user' }, 500)
-            }
-            user = { id: result.id, email: result.email, password_hash: passwordHash }
-        }
-
-        const token = await sign({
-            id: user.id,
-            email: user.email,
-            exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7,
-        }, c.env.JWT_SECRET)
-
-        // Redirect to frontend with token
-        return c.redirect(`${c.env.FRONTEND_URL}/login?token=${token}&email=${encodeURIComponent(user.email)}&id=${user.id}`)
-
-    } catch (e) {
-        console.error('OAuth error:', e)
-        return c.json({ error: 'Authentication failed' }, 500)
+    if (!tokenData.access_token) {
+        console.error('Google token exchange failed:', tokenData)
+        return c.redirect(`${frontendUrl}/auth/callback?error=${encodeURIComponent('Failed to exchange token with Google')}`)
     }
+
+    // Fetch user info from Google
+    const userInfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+        headers: { Authorization: `Bearer ${tokenData.access_token}` },
+    })
+
+    const googleUser = await userInfoRes.json() as { sub?: string; email?: string; name?: string; picture?: string }
+
+    if (!googleUser.email || !googleUser.sub) {
+        return c.redirect(`${frontendUrl}/auth/callback?error=${encodeURIComponent('Could not retrieve user info from Google')}`)
+    }
+
+    // Find or create user
+    let user = await c.env.DB.prepare(
+        'SELECT * FROM users WHERE google_id = ? OR email = ?'
+    ).bind(googleUser.sub, googleUser.email).first<{ id: number; email: string; google_id: string | null }>()
+
+    if (!user) {
+        // First-time Google login — create account
+        const insertResult = await c.env.DB.prepare(
+            'INSERT INTO users (email, password_hash, google_id) VALUES (?, ?, ?) RETURNING *'
+        ).bind(googleUser.email, '', googleUser.sub).first<{ id: number; email: string }>()
+
+        if (!insertResult) {
+            return c.redirect(`${frontendUrl}/auth/callback?error=${encodeURIComponent('Failed to create account')}`)
+        }
+        user = { ...insertResult, google_id: googleUser.sub }
+    } else if (!user.google_id) {
+        // Existing email/password account — link Google ID
+        await c.env.DB.prepare(
+            'UPDATE users SET google_id = ? WHERE id = ?'
+        ).bind(googleUser.sub, user.id).run()
+    }
+
+    const token = await issueToken(user.id, user.email, c.env.JWT_SECRET)
+    const userParam = encodeURIComponent(JSON.stringify({ id: user.id, email: user.email }))
+
+    return c.redirect(`${frontendUrl}/auth/callback?token=${token}&user=${userParam}`)
 })
 
 export default auth
