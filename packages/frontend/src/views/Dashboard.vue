@@ -26,7 +26,9 @@ import {
   Trash2,
   Image as ImageIcon,
   Link as LinkIcon,
-  GripVertical
+  GripVertical,
+  Download,
+  Upload
 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -230,6 +232,62 @@ function removeCustomSection(index) {
     const rightIdx = resume.content.themeConfig.columnAssignment.rightColumn.indexOf(section.id)
     if (rightIdx > -1) resume.content.themeConfig.columnAssignment.rightColumn.splice(rightIdx, 1)
   }
+}
+
+// Import / Export Logic
+function exportData() {
+  try {
+    const dataStr = JSON.stringify(resume.content, null, 2)
+    const blob = new Blob([dataStr], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `resumax_export_${resume.slug || 'data'}.json`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+    
+    toast.success('Resume data exported successfully!')
+  } catch (e) {
+    console.error('Export failed:', e)
+    toast.error('Failed to export data.')
+  }
+}
+
+function importData(event) {
+  const file = event.target.files[0]
+  if (!file) return
+
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    try {
+      const parsedData = JSON.parse(e.target.result)
+      
+      // Basic validation: ensure it's an object
+      if (typeof parsedData !== 'object' || parsedData === null) {
+        throw new Error('Invalid JSON format: Expected an object.')
+      }
+
+      // Merge data carefully (or overwrite entirely, which is safer for a full restore)
+      // Here we choose to overwrite to ensure clean restore, while preserving structure
+      resume.content = { 
+        ...resume.content, 
+        ...parsedData 
+      }
+      
+      // Reset the file input so the same file can be imported again if needed
+      event.target.value = ''
+      
+      toast.success('Data imported successfully! Please save your changes.')
+    } catch (err) {
+      console.error('Import failed:', err)
+      toast.error('Invalid JSON file. Cannot import data.')
+      event.target.value = '' // reset input
+    }
+  }
+  reader.readAsText(file)
 }
 </script>
 
@@ -464,6 +522,21 @@ function removeCustomSection(index) {
               <p v-if="resume.slug && resume.slug.trim().length > 0 && resume.slug.trim().length < 4" class="text-[10px] text-red-500 mt-1 font-bold animate-pulse">Slug must be at least 4 characters.</p>
               <p v-if="!resume.slug || resume.slug.trim() === ''" class="text-[10px] text-blue-500 mt-1 font-bold animate-pulse">Leave empty to auto-generate a random slug.</p>
               <p class="text-[10px] text-gray-600 italic">This is the unique address where your resume will be live.</p>
+            </div>
+
+            <div class="space-y-4 pt-6 border-t border-gray-800">
+              <label class="text-[10px] font-bold text-gray-500 uppercase tracking-widest block">Data Management</label>
+              <p class="text-xs text-gray-400 mb-2">Export your data for backup, or import an existing JSON configuration.</p>
+              <div class="flex gap-4">
+                <button @click="exportData" class="flex-1 bg-gray-900 border border-gray-700 hover:border-blue-500 hover:text-blue-400 text-gray-300 py-2.5 rounded-xl text-sm font-bold transition flex items-center justify-center gap-2">
+                  <Download class="w-4 h-4" /> Export JSON
+                </button>
+                
+                <label class="flex-1 bg-gray-900 border border-gray-700 hover:border-pink-500 hover:text-pink-400 text-gray-300 py-2.5 rounded-xl text-sm font-bold transition flex items-center justify-center gap-2 cursor-pointer">
+                  <Upload class="w-4 h-4" /> Import JSON
+                  <input type="file" accept=".json,application/json" @change="importData" class="hidden" />
+                </label>
+              </div>
             </div>
           </div>
 
