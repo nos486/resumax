@@ -97,4 +97,94 @@ auth.post('/login', async (c) => {
     return c.json({ token, user: { id: user.id, email: user.email } })
 })
 
+auth.get('/google', async (c) => {
+    if (!c.env.GOOGLE_CLIENT_ID || !c.env.FRONTEND_URL) {
+        return c.json({ error: 'Server misconfiguration: Google OAuth missing' }, 500)
+    }
+
+    const redirectUri = `${new URL(c.req.url).origin}/api/auth/google/callback`
+    const scope = 'email profile'
+    const oauthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${c.env.GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&access_type=online`
+
+    return c.redirect(oauthUrl)
+})
+
+auth.get('/google/callback', async (c) => {
+    const code = c.req.query('code')
+    if (!code) {
+        return c.json({ error: 'No code provided' }, 400)
+    }
+
+    if (!c.env.GOOGLE_CLIENT_ID || !c.env.GOOGLE_CLIENT_SECRET || !c.env.FRONTEND_URL || !c.env.JWT_SECRET) {
+        return c.json({ error: 'Server misconfiguration' }, 500)
+    }
+
+    const redirectUri = `${new URL(c.req.url).origin}/api/auth/google/callback`
+
+    try {
+        // Exchange code for token
+        const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+                code,
+                client_id: c.env.GOOGLE_CLIENT_ID,
+                client_secret: c.env.GOOGLE_CLIENT_SECRET,
+                redirect_uri: redirectUri,
+                grant_type: 'authorization_code'
+            })
+        })
+
+        const tokenData = await tokenRes.json() as { access_token?: string, error?: string }
+
+        if (tokenData.error || !tokenData.access_token) {
+            return c.json({ error: 'Failed to exchange token' }, 400)
+        }
+
+        // Fetch user info
+        const userRes = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+            headers: { Authorization: `Bearer ${tokenData.access_token}` }
+        })
+
+        const userData = await userRes.json() as { email?: string, id?: string }
+
+        if (!userData.email) {
+            return c.json({ error: 'Failed to retrieve email from Google' }, 400)
+        }
+
+        const email = userData.email
+
+        // Check user exists
+        let user = await c.env.DB.prepare(
+            'SELECT * FROM users WHERE email = ?'
+        ).bind(email).first<{ id: number; email: string; password_hash: string }>()
+
+        if (!user) {
+            // Create user with dummy password hash for OAuth users
+            const passwordHash = await bcrypt.hash(Math.random().toString(36) + Math.random().toString(36), 10)
+            const result = await c.env.DB.prepare(
+                'INSERT INTO users (email, password_hash) VALUES (?, ?) RETURNING id, email'
+            ).bind(email, passwordHash).first<{ id: number; email: string }>()
+
+            if (!result) {
+                return c.json({ error: 'Failed to create user' }, 500)
+            }
+            user = { id: result.id, email: result.email, password_hash: passwordHash }
+        }
+
+        const token = await sign({
+            id: user.id,
+            email: user.email,
+            exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7,
+        }, c.env.JWT_SECRET)
+
+        // Redirect to frontend with token
+        return c.redirect(`${c.env.FRONTEND_URL}/login?token=${token}&email=${encodeURIComponent(user.email)}&id=${user.id}`)
+
+    } catch (e) {
+        console.error('OAuth error:', e)
+        return c.json({ error: 'Authentication failed' }, 500)
+    }
+})
+
 export default auth
