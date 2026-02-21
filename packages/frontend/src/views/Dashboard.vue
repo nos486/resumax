@@ -142,10 +142,17 @@ onMounted(async () => {
 const isSlugValid = computed(() => !resume.slug || resume.slug.length >= 4)
 
 async function saveResume() {
-  if (!isSlugValid.value) {
+  if (resume.slug && resume.slug.trim().length > 0 && resume.slug.trim().length < 4) {
     toast.error('Slug must be at least 4 characters long.')
     return
   }
+
+  // Auto-generate slug if empty
+  if (!resume.slug || resume.slug.trim() === '') {
+    resume.slug = Math.random().toString(36).substring(2, 8)
+    toast.info('Random slug generated')
+  }
+
   saving.value = true
   try {
     await api.updateResume({
@@ -454,7 +461,8 @@ function removeCustomSection(index) {
                 <span class="text-gray-600 text-sm font-mono">resumax.me/v/</span>
                 <input v-model="resume.slug" class="bg-transparent flex-1 py-2 px-1 text-white text-sm outline-none font-bold" />
               </div>
-              <p v-if="resume.slug && resume.slug.length < 4" class="text-[10px] text-red-500 mt-1 font-bold animate-pulse">Slug must be at least 4 characters.</p>
+              <p v-if="resume.slug && resume.slug.trim().length > 0 && resume.slug.trim().length < 4" class="text-[10px] text-red-500 mt-1 font-bold animate-pulse">Slug must be at least 4 characters.</p>
+              <p v-if="!resume.slug || resume.slug.trim() === ''" class="text-[10px] text-blue-500 mt-1 font-bold animate-pulse">Leave empty to auto-generate a random slug.</p>
               <p class="text-[10px] text-gray-600 italic">This is the unique address where your resume will be live.</p>
             </div>
           </div>
