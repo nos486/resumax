@@ -1,125 +1,24 @@
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { api } from '../lib/api'
-import { toast } from '../lib/toast'
-
-const email = ref('')
-const password = ref('')
-const loading = ref(false)
-const router = useRouter()
-
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8787/api'
 
 function handleGoogleLogin() {
   window.location.href = `${API_URL}/auth/google`
 }
-
-window.onCaptchaVerified = (token) => {
-  captchaToken.value = token
-}
-
-const captchaToken = ref('')
-
-const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY || '0x4AAAAAAA-placeholder'
-
-onMounted(() => {
-  // Wait for Turnstile script to load, then render the widget
-  const renderTurnstile = () => {
-    if (window.turnstile) {
-      const container = document.querySelector('.cf-turnstile')
-      if (container && !container.hasChildNodes()) {
-        window.turnstile.render('.cf-turnstile', {
-          sitekey: siteKey,
-          callback: (token) => {
-            captchaToken.value = token
-          }
-        })
-      }
-    } else {
-      // Retry if script hasn't loaded yet
-      setTimeout(renderTurnstile, 100)
-    }
-  }
-  renderTurnstile()
-})
-
-async function handleLogin() {
-  if (!captchaToken.value) {
-    toast.error('Please complete the captcha')
-    return
-  }
-  loading.value = true
-  try {
-    const data = await api.login(email.value, password.value, captchaToken.value)
-    localStorage.setItem('token', data.token)
-    localStorage.setItem('user', JSON.stringify(data.user))
-    toast.success('Welcome back!')
-    router.push('/dashboard')
-  } catch (e) {
-    toast.error(e.message)
-    // Reset turnstile on error
-    if (window.turnstile) window.turnstile.reset()
-  } finally {
-    loading.value = false
-  }
-}
 </script>
 
 <template>
   <div class="min-h-screen flex items-center justify-center bg-gray-900 px-4">
-    <div class="bg-gray-800 p-8 rounded-xl shadow-2xl w-full max-w-md border border-gray-700">
-      <h2 class="text-3xl font-bold text-white mb-6 text-center">Welcome Back</h2>
+    <div class="bg-gray-800 p-10 rounded-2xl shadow-2xl w-full max-w-sm border border-gray-700 flex flex-col items-center gap-6">
       
-      <form @submit.prevent="handleLogin" class="space-y-6">
-        <div>
-          <label class="block text-gray-400 mb-2 font-medium">Email</label>
-          <input 
-            v-model="email" 
-            type="email" 
-            required
-            class="w-full px-4 py-3 bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition"
-            placeholder="you@example.com"
-          />
-        </div>
-        
-        <div>
-          <label class="block text-gray-400 mb-2 font-medium">Password</label>
-          <input 
-            v-model="password" 
-            type="password" 
-            required
-            class="w-full px-4 py-3 bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition"
-            placeholder="••••••••"
-          />
-        </div>
-
-        <div class="space-y-2">
-           <p class="text-[10px] text-gray-500 text-center uppercase tracking-widest">Please complete the captcha</p>
-           <div class="flex justify-center">
-              <div class="cf-turnstile" :data-sitekey="siteKey" data-callback="onCaptchaVerified"></div>
-           </div>
-        </div>
-
-        <button 
-          type="submit" 
-          :disabled="loading"
-          class="w-full py-3 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-bold rounded-lg transition transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {{ loading ? 'Signing in...' : 'Sign In' }}
-        </button>
-      </form>
-
-      <div class="relative my-4 flex items-center gap-3">
-        <hr class="flex-1 border-gray-700" />
-        <span class="text-xs text-gray-500 uppercase tracking-widest">or</span>
-        <hr class="flex-1 border-gray-700" />
+      <div class="flex flex-col items-center gap-2">
+        <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center font-bold text-white text-xl shadow-lg">R</div>
+        <h1 class="text-2xl font-bold text-white">Resumax</h1>
+        <p class="text-gray-400 text-sm text-center">Sign in to access your resume builder</p>
       </div>
 
       <button
-        type="button"
         @click="handleGoogleLogin"
-        class="w-full flex items-center justify-center gap-3 py-3 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-lg transition border border-gray-600 hover:border-gray-400"
+        class="w-full flex items-center justify-center gap-3 py-3 bg-white hover:bg-gray-100 text-gray-800 font-bold rounded-xl transition shadow-lg"
       >
         <svg class="w-5 h-5" viewBox="0 0 24 24">
           <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -130,9 +29,8 @@ async function handleLogin() {
         Continue with Google
       </button>
 
-      <p class="mt-6 text-center text-gray-400">
-        Don't have an account?
-        <router-link to="/register" class="text-blue-400 hover:text-blue-300 font-medium">Register</router-link>
+      <p class="text-xs text-gray-600 text-center">
+        No account? One will be created automatically on first sign-in.
       </p>
     </div>
   </div>

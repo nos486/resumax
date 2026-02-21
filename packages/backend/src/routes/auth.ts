@@ -1,24 +1,8 @@
 import { Hono } from 'hono'
 import { sign } from 'hono/jwt'
-import * as bcrypt from 'bcryptjs'
 import { Bindings } from '../types'
 
 const auth = new Hono<{ Bindings: Bindings }>()
-
-async function verifyTurnstile(token: string, secretKey: string) {
-    if (!token) return false;
-    const formData = new FormData();
-    formData.append('secret', secretKey);
-    formData.append('response', token);
-
-    const url = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
-    const result = await fetch(url, {
-        body: formData,
-        method: 'POST',
-    });
-    const outcome = await result.json() as { success: boolean };
-    return outcome.success;
-}
 
 // Shared helper to issue a JWT for a user
 async function issueToken(userId: number, email: string, jwtSecret: string) {
@@ -28,81 +12,6 @@ async function issueToken(userId: number, email: string, jwtSecret: string) {
         exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7, // 7 days
     }, jwtSecret)
 }
-
-// ─── Email/Password Auth ──────────────────────────────────────────────────────
-
-auth.post('/register', async (c) => {
-    const { email, password, captchaToken } = await c.req.json()
-
-    if (!email || !password) {
-        return c.json({ error: 'Email and password are required' }, 400)
-    }
-
-    // Verify Captcha
-    if (c.env.TURNSTILE_SECRET_KEY) {
-        const isValid = await verifyTurnstile(captchaToken, c.env.TURNSTILE_SECRET_KEY);
-        if (!isValid) {
-            return c.json({ error: 'Invalid captcha token' }, 403)
-        }
-    }
-
-    // Check if user exists
-    const existingUser = await c.env.DB.prepare(
-        'SELECT * FROM users WHERE email = ?'
-    ).bind(email).first()
-
-    if (existingUser) {
-        return c.json({ error: 'User already exists' }, 409)
-    }
-
-    // Hash password
-    const passwordHash = await bcrypt.hash(password, 10)
-
-    // Insert user
-    const result = await c.env.DB.prepare(
-        'INSERT INTO users (email, password_hash) VALUES (?, ?)'
-    ).bind(email, passwordHash).run()
-
-    if (!result.success) {
-        return c.json({ error: 'Failed to create user' }, 500)
-    }
-
-    return c.json({ message: 'User created successfully' }, 201)
-})
-
-auth.post('/login', async (c) => {
-    const { email, password, captchaToken } = await c.req.json()
-
-    if (!email || !password) {
-        return c.json({ error: 'Email and password are required' }, 400)
-    }
-
-    // Verify Captcha
-    if (c.env.TURNSTILE_SECRET_KEY) {
-        const isValid = await verifyTurnstile(captchaToken, c.env.TURNSTILE_SECRET_KEY);
-        if (!isValid) {
-            return c.json({ error: 'Invalid captcha token' }, 403)
-        }
-    }
-
-    if (!c.env.JWT_SECRET) {
-        console.error('JWT_SECRET is not set')
-        return c.json({ error: 'Server misconfiguration: JWT_SECRET missing' }, 500)
-    }
-
-
-    const user = await c.env.DB.prepare(
-        'SELECT * FROM users WHERE email = ?'
-    ).bind(email).first<{ id: number; email: string; password_hash: string }>()
-
-    if (!user || !(await bcrypt.compare(password, user.password_hash))) {
-        return c.json({ error: 'Invalid email or password' }, 401)
-    }
-
-    const token = await issueToken(user.id, user.email, c.env.JWT_SECRET)
-
-    return c.json({ token, user: { id: user.id, email: user.email } })
-})
 
 // ─── Google OAuth ─────────────────────────────────────────────────────────────
 
@@ -168,7 +77,7 @@ auth.get('/google/callback', async (c) => {
         headers: { Authorization: `Bearer ${tokenData.access_token}` },
     })
 
-    const googleUser = await userInfoRes.json() as { sub?: string; email?: string; name?: string; picture?: string }
+    const googleUser = await userInfoRes.json() as { sub?: string; email?: string; name?: string }
 
     if (!googleUser.email || !googleUser.sub) {
         return c.redirect(`${frontendUrl}/auth/callback?error=${encodeURIComponent('Could not retrieve user info from Google')}`)
@@ -182,15 +91,15 @@ auth.get('/google/callback', async (c) => {
     if (!user) {
         // First-time Google login — create account
         const insertResult = await c.env.DB.prepare(
-            'INSERT INTO users (email, password_hash, google_id) VALUES (?, ?, ?) RETURNING *'
-        ).bind(googleUser.email, '', googleUser.sub).first<{ id: number; email: string }>()
+            'INSERT INTO users (email, google_id) VALUES (?, ?) RETURNING *'
+        ).bind(googleUser.email, googleUser.sub).first<{ id: number; email: string }>()
 
         if (!insertResult) {
             return c.redirect(`${frontendUrl}/auth/callback?error=${encodeURIComponent('Failed to create account')}`)
         }
         user = { ...insertResult, google_id: googleUser.sub }
     } else if (!user.google_id) {
-        // Existing email/password account — link Google ID
+        // Existing account — link Google ID
         await c.env.DB.prepare(
             'UPDATE users SET google_id = ? WHERE id = ?'
         ).bind(googleUser.sub, user.id).run()

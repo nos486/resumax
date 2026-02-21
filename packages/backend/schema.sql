@@ -4,7 +4,7 @@
 CREATE TABLE users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     email TEXT NOT NULL UNIQUE,
-    password_hash TEXT NOT NULL,
+    google_id TEXT UNIQUE,
     created_at INTEGER DEFAULT (unixepoch())
 );
 
