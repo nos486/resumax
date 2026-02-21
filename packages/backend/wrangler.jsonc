@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "backend",
+  "name": "resumax-backend",
   "main": "src/index.ts",
   "compatibility_date": "2026-02-15",
   // "compatibility_flags": [
