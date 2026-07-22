@@ -82,6 +82,7 @@ const defaultConfig = {
   },
   font: 'Inter',
   layout: 'full-width',
+  direction: 'ltr',
   sectionOrder: ['bio', 'experience', 'education', 'certifications', 'skills'],
   borderRadius: 'rounded',
   showIcons: true
@@ -190,7 +191,7 @@ const renderSection = (sectionId) => {
 </script>
 
 <template>
-  <div :style="cssVars" class="dynamic-theme min-h-full">
+  <div :style="cssVars" :dir="config.direction" class="dynamic-theme min-h-full" :class="{ 'rtl-cv': config.direction === 'rtl' }">
     <div class="w-full overflow-hidden" :class="borderClass">
       
       <!-- Header -->
@@ -538,5 +539,44 @@ const renderSection = (sectionId) => {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
+}
+
+/* ============================================================
+   RTL overrides — applied when dir="rtl" / .rtl-cv is set
+   ============================================================ */
+
+/* Flip the timeline: border moves to the right side */
+.rtl-cv .relative.pl-6.border-l-2 {
+  padding-left: 0;
+  padding-right: 1.5rem;
+  border-left: none;
+  border-right: 2px solid var(--color-accent);
+}
+
+/* Flip the timeline dot from left to right */
+.rtl-cv .-left-\[9px\] {
+  left: auto;
+  right: -9px;
+}
+
+/* Text alignment for content paragraphs */
+.rtl-cv .text-justify {
+  text-align: right;
+}
+
+/* Header contact items — reverse order in RTL */
+.rtl-cv header .flex.flex-wrap {
+  direction: rtl;
+}
+
+/* Section heading border direction */
+.rtl-cv .section-heading,
+.rtl-cv .section-title-sm {
+  text-align: right;
+}
+
+/* Skill badges wrap RTL */
+.rtl-cv .flex.flex-wrap.gap-2 {
+  direction: rtl;
 }
 </style>

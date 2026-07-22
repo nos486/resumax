@@ -133,6 +133,10 @@ if (!config.sectionStyles) {
     certifications: 'card'
   }
 }
+// Ensure config has direction
+if (!config.direction) {
+  config.direction = 'ltr'
+}
 
 watch(config, (newVal) => { emit('update:modelValue', { ...newVal }) }, { deep: true })
 
@@ -484,6 +488,30 @@ function moveSection(sectionId, from, to) {
         </div>
         <span class="text-sm text-gray-300 group-hover:text-white transition">Show Icons in Resume</span>
       </label>
+    </div>
+
+    <!-- Language Direction Toggle -->
+    <div class="pt-4 border-t border-gray-800">
+      <h3 class="text-sm font-bold text-gray-300 mb-3">Language Direction</h3>
+      <p class="text-[10px] text-gray-500 mb-3">Use RTL for Arabic, Persian, Hebrew and other right-to-left languages.</p>
+      <div class="grid grid-cols-2 gap-2">
+        <button
+          @click="config.direction = 'ltr'"
+          :class="config.direction === 'ltr' ? 'bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-900/30' : 'bg-gray-800 text-gray-400 border-gray-700 hover:border-gray-500 hover:text-gray-200'"
+          class="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border text-sm font-bold transition-all"
+        >
+          <span class="text-base leading-none">LTR</span>
+          <span class="text-[10px] font-normal opacity-70">Left → Right</span>
+        </button>
+        <button
+          @click="config.direction = 'rtl'"
+          :class="config.direction === 'rtl' ? 'bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-900/30' : 'bg-gray-800 text-gray-400 border-gray-700 hover:border-gray-500 hover:text-gray-200'"
+          class="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border text-sm font-bold transition-all"
+        >
+          <span class="text-base leading-none">RTL</span>
+          <span class="text-[10px] font-normal opacity-70">Right → Left</span>
+        </button>
+      </div>
     </div>
   </div>
 </template>
