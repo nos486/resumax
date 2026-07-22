@@ -156,10 +156,12 @@ const cssVars = computed(() => ({
                    config.value.font === 'Roboto' ? 'Roboto, sans-serif' :
                    config.value.font === 'Merriweather' ? 'Merriweather, serif' :
                    config.value.font === 'Playfair Display' ? '"Playfair Display", serif' :
-                   config.value.font === 'JetBrains Mono' ? '"JetBrains Mono", monospace' : 'Inter, sans-serif'
+                   config.value.font === 'JetBrains Mono' ? '"JetBrains Mono", monospace' :
+                   config.value.font === 'Vazirmatn' ? 'Vazirmatn, sans-serif' : 'Inter, sans-serif'
 }))
 
 const borderClass = computed(() => config.value.borderRadius === 'rounded' ? 'md:rounded-2xl' : 'rounded-none')
+const isRTL = computed(() => config.value.direction === 'rtl')
 
 const renderSection = (sectionId) => {
   const section = sectionId
@@ -196,12 +198,12 @@ const renderSection = (sectionId) => {
       
       <!-- Header -->
       <header class="header-gradient text-white p-8">
-        <div class="flex flex-col md:flex-row items-center gap-6">
+        <div class="flex flex-col items-center gap-6" :class="isRTL ? 'md:flex-row-reverse' : 'md:flex-row'">
           <img v-if="resume.content.personalInfo.image" :src="resume.content.personalInfo.image" class="w-48 h-48 md:w-40 md:h-40 rounded-full border-4 border-white/30 md:border-0 object-cover shadow-sm" />
-          <div class="text-center md:text-left flex-1">
+          <div class="text-center flex-1" :class="isRTL ? 'md:text-right' : 'md:text-left'">
             <h1 class="text-4xl font-bold mb-2">{{ resume.content.personalInfo.name }}</h1>
             <p class="text-xl opacity-90 mb-4">{{ resume.content.personalInfo.title }}</p>
-            <div class="flex flex-wrap justify-center md:justify-start gap-4 text-sm opacity-80">
+            <div class="flex flex-wrap gap-4 text-sm opacity-80 justify-center" :class="isRTL ? 'md:justify-end' : 'md:justify-start'">
               <span v-if="resume.content.personalInfo.email" class="flex items-center gap-1">
                 <component :is="renderIcon('Mail')" class="w-4 h-4" /> {{ resume.content.personalInfo.email }}
               </span>
@@ -212,7 +214,7 @@ const renderSection = (sectionId) => {
                 <component :is="renderIcon('MapPin')" class="w-4 h-4" /> {{ resume.content.personalInfo.location }}
               </span>
             </div>
-            <div v-if="resume.content.personalInfo.links?.length" class="flex flex-wrap justify-center md:justify-start gap-3 mt-4">
+            <div v-if="resume.content.personalInfo.links?.length" class="flex flex-wrap gap-3 mt-4 justify-center" :class="isRTL ? 'md:justify-end' : 'md:justify-start'">
               <a v-for="(link, i) in resume.content.personalInfo.links" :key="i" :href="link.url" target="_blank" class="text-white hover:opacity-80 transition">
                 <component :is="renderIcon(link.icon)" v-if="link.icon" class="w-5 h-5" :title="link.platform"/>
                 <span v-else>{{ link.platform }}</span>
@@ -475,6 +477,7 @@ const renderSection = (sectionId) => {
 
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto:wght@400;500;700&family=Merriweather:wght@400;700&family=Playfair+Display:wght@400;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+@import url('https://cdn.jsdelivr.net/npm/vazirmatn@33.003/Vazirmatn-font-face.css');
 
 .dynamic-theme {
   font-family: var(--font-family);

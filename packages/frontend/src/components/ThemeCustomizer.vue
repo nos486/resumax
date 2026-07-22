@@ -329,6 +329,7 @@ function moveSection(sectionId, from, to) {
         <option value="Merriweather">Merriweather (Serif)</option>
         <option value="Playfair Display">Playfair Display (Serif)</option>
         <option value="JetBrains Mono">JetBrains Mono (Monospace)</option>
+        <option value="Vazirmatn">Vazirmatn — وزیرمتن (Persian / Arabic)</option>
       </select>
     </div>
 
