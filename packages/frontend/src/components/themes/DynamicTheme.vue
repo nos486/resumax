@@ -163,6 +163,20 @@ const cssVars = computed(() => ({
 const borderClass = computed(() => config.value.borderRadius === 'rounded' ? 'md:rounded-2xl' : 'rounded-none')
 const isRTL = computed(() => config.value.direction === 'rtl')
 
+// Bilingual section title helper
+const t = (key) => {
+  if (!isRTL.value) return null // template will fall back to English default
+  const fa = {
+    bio: 'درباره من',
+    experience: 'تجربه کاری',
+    education: 'تحصیلات',
+    skills: 'مهارت‌ها',
+    certifications: 'گواهینامه‌ها و مدارک',
+    about: 'درباره من',
+  }
+  return fa[key] || null
+}
+
 const renderSection = (sectionId) => {
   const section = sectionId
   const content = props.resume.content
@@ -229,12 +243,12 @@ const renderSection = (sectionId) => {
         <template v-for="section in config.sectionOrder" :key="section">
           <component :is="'div'" v-if="renderSection(section)">
             <section v-if="renderSection(section).type === 'bio'">
-              <h2 class="section-heading">About Me</h2>
+              <h2 class="section-heading">{{ t('bio') || 'About Me' }}</h2>
               <p class="text-content leading-relaxed whitespace-pre-line break-words text-justify hyphens-auto">{{ renderSection(section).data }}</p>
             </section>
 
             <section v-else-if="renderSection(section).type === 'experience'">
-              <h2 class="section-heading">Experience</h2>
+              <h2 class="section-heading">{{ t('experience') || 'Experience' }}</h2>
               <div class="space-y-6">
                 <div v-for="(exp, index) in renderSection(section).data" :key="index" :class="getExperienceItemClass()">
                   <div v-if="showExperienceDot()" class="absolute -left-[9px] top-0 w-4 h-4 rounded-full accent-dot"></div>
@@ -252,7 +266,7 @@ const renderSection = (sectionId) => {
             </section>
 
             <section v-else-if="renderSection(section).type === 'education'">
-              <h2 class="section-heading">Education</h2>
+              <h2 class="section-heading">{{ t('education') || 'Education' }}</h2>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div v-for="(edu, index) in renderSection(section).data" :key="index" :class="getSectionCardClass('education')">
                   <h3 class="font-bold text-primary flex items-center gap-2">
@@ -266,7 +280,7 @@ const renderSection = (sectionId) => {
             </section>
 
             <section v-else-if="renderSection(section).type === 'skills'">
-              <h2 class="section-heading">Skills</h2>
+              <h2 class="section-heading">{{ t('skills') || 'Skills' }}</h2>
               <!-- Categorized format -->
               <div v-if="renderSection(section).data[0]?.items" class="space-y-6">
                 <div v-for="(cat, i) in renderSection(section).data" :key="i">
@@ -289,7 +303,7 @@ const renderSection = (sectionId) => {
             </section>
 
             <section v-else-if="renderSection(section).type === 'certifications'">
-              <h2 class="section-heading">Licenses & Certifications</h2>
+              <h2 class="section-heading">{{ t('certifications') || 'Licenses & Certifications' }}</h2>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div v-for="(cert, index) in renderSection(section).data" :key="index" class="bg-surface p-4 rounded-lg border border-gray-200">
                    <h3 class="font-bold text-primary">{{ cert.name }}</h3>
@@ -316,12 +330,12 @@ const renderSection = (sectionId) => {
             <template v-for="section in config.columnAssignment.leftColumn" :key="section">
               <component :is="'div'" v-if="renderSection(section)">
                 <section v-if="renderSection(section).type === 'bio'" class="mb-6">
-                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 section-title-sm">About</h3>
+                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 section-title-sm">{{ t('about') || 'About' }}</h3>
                   <p class="text-sm leading-relaxed text-content whitespace-pre-line break-words text-justify hyphens-auto">{{ renderSection(section).data }}</p>
                 </section>
 
                 <section v-else-if="renderSection(section).type === 'education'" class="mb-6">
-                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 section-title-sm">Education</h3>
+                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 section-title-sm">{{ t('education') || 'Education' }}</h3>
                   <div class="space-y-3">
                     <div v-for="(edu, index) in renderSection(section).data" :key="index" :class="getSectionCardClass('education')">
                       <div class="font-bold text-primary text-sm flex items-center gap-2">
@@ -335,7 +349,7 @@ const renderSection = (sectionId) => {
                 </section>
 
                 <section v-else-if="renderSection(section).type === 'skills'" class="mb-6">
-                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 section-title-sm">Skills</h3>
+                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 section-title-sm">{{ t('skills') || 'Skills' }}</h3>
                   <div v-if="renderSection(section).data[0]?.items" class="space-y-4">
                     <div v-for="(cat, i) in renderSection(section).data" :key="i">
                       <h4 class="text-xs font-bold text-primary mb-2">{{ cat.category }}</h4>
@@ -350,7 +364,7 @@ const renderSection = (sectionId) => {
                 </section>
 
                 <section v-else-if="renderSection(section).type === 'certifications'" class="mb-6">
-                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 section-title-sm">Certifications</h3>
+                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 section-title-sm">{{ t('certifications') || 'Certifications' }}</h3>
                   <div class="space-y-3">
                     <div v-for="(cert, index) in renderSection(section).data" :key="index" :class="getSectionCardClass('certifications')">
                       <div class="font-bold text-primary text-sm">{{ cert.name }}</div>
@@ -362,7 +376,7 @@ const renderSection = (sectionId) => {
                 </section>
 
                 <section v-else-if="renderSection(section).type === 'experience'" class="mb-6">
-                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 section-title-sm">Experience</h3>
+                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 section-title-sm">{{ t('experience') || 'Experience' }}</h3>
                   <div class="space-y-4">
                     <div v-for="(exp, index) in renderSection(section).data" :key="index" :class="getExperienceItemClass()">
                       <div v-if="showExperienceDot()" class="absolute -left-[9px] top-0 w-4 h-4 rounded-full accent-dot"></div>
@@ -392,7 +406,7 @@ const renderSection = (sectionId) => {
             <template v-for="section in config.columnAssignment.rightColumn" :key="section">
               <component :is="'div'" v-if="renderSection(section)">
                 <section v-if="renderSection(section).type === 'experience'">
-                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-4 section-title-sm">Experience</h3>
+                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-4 section-title-sm">{{ t('experience') || 'Experience' }}</h3>
                   <div class="space-y-6">
                     <div v-for="(exp, index) in renderSection(section).data" :key="index" :class="getExperienceItemClass()">
                       <div v-if="showExperienceDot()" class="absolute -left-[9px] top-0 w-4 h-4 rounded-full accent-dot"></div>
@@ -410,12 +424,12 @@ const renderSection = (sectionId) => {
                 </section>
 
                 <section v-else-if="renderSection(section).type === 'bio'">
-                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 section-title-sm">About</h3>
+                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 section-title-sm">{{ t('about') || 'About' }}</h3>
                   <p class="text-content leading-relaxed whitespace-pre-line break-words text-justify hyphens-auto">{{ renderSection(section).data }}</p>
                 </section>
 
                 <section v-else-if="renderSection(section).type === 'education'">
-                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 section-title-sm">Education</h3>
+                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 section-title-sm">{{ t('education') || 'Education' }}</h3>
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div v-for="(edu, index) in renderSection(section).data" :key="index" :class="getSectionCardClass('education')">
                       <h4 class="font-bold text-primary flex items-center gap-2">
@@ -429,7 +443,7 @@ const renderSection = (sectionId) => {
                 </section>
 
                 <section v-else-if="renderSection(section).type === 'skills'">
-                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 section-title-sm">Skills</h3>
+                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 section-title-sm">{{ t('skills') || 'Skills' }}</h3>
                   <div v-if="renderSection(section).data[0]?.items" class="space-y-6">
                     <div v-for="(cat, i) in renderSection(section).data" :key="i">
                       <h4 class="text-lg font-semibold text-primary mb-2">{{ cat.category }}</h4>
@@ -444,7 +458,7 @@ const renderSection = (sectionId) => {
                 </section>
 
                 <section v-else-if="renderSection(section).type === 'certifications'">
-                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 section-title-sm">Certifications</h3>
+                  <h3 class="text-sm font-bold uppercase tracking-widest border-b pb-1 mb-3 section-title-sm">{{ t('certifications') || 'Certifications' }}</h3>
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div v-for="(cert, index) in renderSection(section).data" :key="index" :class="getSectionCardClass('certifications')">
                       <h4 class="font-bold text-primary">{{ cert.name }}</h4>
@@ -477,7 +491,7 @@ const renderSection = (sectionId) => {
 
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto:wght@400;500;700&family=Merriweather:wght@400;700&family=Playfair+Display:wght@400;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
-@import url('https://cdn.jsdelivr.net/npm/vazirmatn@33.003/Vazirmatn-font-face.css');
+@import url('https://cdn.jsdelivr.net/npm/vazirmatn@33.0.3/Vazirmatn-font-face.min.css');
 
 .dynamic-theme {
   font-family: var(--font-family);
