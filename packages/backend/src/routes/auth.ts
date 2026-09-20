@@ -15,6 +15,16 @@ import {
 
 const auth = new Hono<{ Bindings: Bindings; Variables: Variables }>()
 
+// Helper to check if an email matches the configured admin emails
+function isConfiguredAdmin(email: string, adminEmailsConfig?: string): boolean {
+  if (!adminEmailsConfig || !email) return false
+  const adminList = adminEmailsConfig
+    .split(',')
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean)
+  return adminList.includes(email.trim().toLowerCase())
+}
+
 // ─── Google OAuth ─────────────────────────────────────────────────────────────
 
 // Step 1: Redirect user to Google consent page
@@ -37,7 +47,7 @@ auth.get('/google', async (c) => {
   return c.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`)
 })
 
-// Step 2: Handle Google callback — exchange code, issue httpOnly cookies, redirect safely
+// Step 2: Handle Google callback — exchange code, verify admin status, issue cookies
 auth.get('/google/callback', async (c) => {
   const code = c.req.query('code')
   const error = c.req.query('error')
@@ -69,7 +79,6 @@ auth.get('/google/callback', async (c) => {
   const tokenData = (await tokenRes.json()) as { access_token?: string; error?: string }
 
   if (!tokenData.access_token) {
-    console.error('Google token exchange failed:', tokenData)
     return c.redirect(`${frontendUrl}/auth/callback?error=${encodeURIComponent('Failed to exchange token with Google')}`)
   }
 
@@ -84,32 +93,54 @@ auth.get('/google/callback', async (c) => {
     return c.redirect(`${frontendUrl}/auth/callback?error=${encodeURIComponent('Could not retrieve user info from Google')}`)
   }
 
+  const shouldBeAdmin = isConfiguredAdmin(googleUser.email, c.env.ADMIN_EMAILS)
+
   // Find or create user in D1
   let user = await c.env.DB.prepare(
-    'SELECT id, email, google_id FROM users WHERE google_id = ? OR email = ?'
+    'SELECT id, email, google_id, is_admin FROM users WHERE google_id = ? OR email = ?'
   )
     .bind(googleUser.sub, googleUser.email)
-    .first<{ id: number; email: string; google_id: string | null }>()
+    .first<{ id: number; email: string; google_id: string | null; is_admin: number }>()
 
   if (!user) {
     const insertResult = await c.env.DB.prepare(
-      'INSERT INTO users (email, google_id) VALUES (?, ?) RETURNING id, email, google_id'
+      'INSERT INTO users (email, google_id, is_admin) VALUES (?, ?, ?) RETURNING id, email, google_id, is_admin'
     )
-      .bind(googleUser.email, googleUser.sub)
-      .first<{ id: number; email: string; google_id: string | null }>()
+      .bind(googleUser.email, googleUser.sub, shouldBeAdmin ? 1 : 0)
+      .first<{ id: number; email: string; google_id: string | null; is_admin: number }>()
 
     if (!insertResult) {
       return c.redirect(`${frontendUrl}/auth/callback?error=${encodeURIComponent('Failed to create user account')}`)
     }
     user = insertResult
-  } else if (!user.google_id) {
-    await c.env.DB.prepare('UPDATE users SET google_id = ? WHERE id = ?')
-      .bind(googleUser.sub, user.id)
-      .run()
+  } else {
+    // If user's google_id is missing or admin role needs promotion
+    let needsUpdate = false
+    let updatedGoogleId = user.google_id || googleUser.sub
+    let updatedIsAdmin = user.is_admin
+
+    if (!user.google_id) {
+      needsUpdate = true
+    }
+
+    if (shouldBeAdmin && !user.is_admin) {
+      updatedIsAdmin = 1
+      needsUpdate = true
+    }
+
+    if (needsUpdate) {
+      await c.env.DB.prepare('UPDATE users SET google_id = ?, is_admin = ? WHERE id = ?')
+        .bind(updatedGoogleId, updatedIsAdmin, user.id)
+        .run()
+      user = { ...user, google_id: updatedGoogleId, is_admin: updatedIsAdmin }
+    }
   }
 
   // ─── Dual-token creation ──────────────────────────────────────────────────
-  const accessToken = await issueAccessToken({ id: user.id, email: user.email }, c.env.JWT_SECRET)
+  const accessToken = await issueAccessToken(
+    { id: user.id, email: user.email, is_admin: Boolean(user.is_admin) },
+    c.env.JWT_SECRET
+  )
   const refreshToken = generateSecureToken()
   const hashedRefreshToken = await hashToken(refreshToken)
   const expiresAt = Math.floor(Date.now() / 1000) + REFRESH_TOKEN_MAX_AGE
@@ -125,7 +156,6 @@ auth.get('/google/callback', async (c) => {
   setCookie(c, ACCESS_COOKIE_NAME, accessToken, getCookieOptions(c, ACCESS_TOKEN_MAX_AGE))
   setCookie(c, REFRESH_COOKIE_NAME, refreshToken, getCookieOptions(c, REFRESH_TOKEN_MAX_AGE))
 
-  // Safe redirect: no tokens in URL
   return c.redirect(`${frontendUrl}/auth/callback?success=true`)
 })
 
@@ -149,16 +179,15 @@ auth.post('/refresh', async (c) => {
     .first<{ id: number; user_id: number; expires_at: number }>()
 
   if (!storedToken) {
-    // Clear invalid cookies
     deleteCookie(c, ACCESS_COOKIE_NAME, { path: '/' })
     deleteCookie(c, REFRESH_COOKIE_NAME, { path: '/' })
     return c.json({ error: 'Invalid or expired refresh token', code: 'INVALID_REFRESH_TOKEN' }, 401)
   }
 
-  // Fetch associated user
-  const user = await c.env.DB.prepare('SELECT id, email FROM users WHERE id = ?')
+  // Fetch associated user including is_admin flag
+  const user = await c.env.DB.prepare('SELECT id, email, is_admin FROM users WHERE id = ?')
     .bind(storedToken.user_id)
-    .first<{ id: number; email: string }>()
+    .first<{ id: number; email: string; is_admin: number }>()
 
   if (!user) {
     deleteCookie(c, ACCESS_COOKIE_NAME, { path: '/' })
@@ -177,8 +206,11 @@ auth.post('/refresh', async (c) => {
     .bind(newHashedToken, newExpiresAt, storedToken.id)
     .run()
 
-  // Issue new access token
-  const newAccessToken = await issueAccessToken({ id: user.id, email: user.email }, c.env.JWT_SECRET)
+  // Issue new access token with is_admin
+  const newAccessToken = await issueAccessToken(
+    { id: user.id, email: user.email, is_admin: Boolean(user.is_admin) },
+    c.env.JWT_SECRET
+  )
 
   // Set updated cookies
   setCookie(c, ACCESS_COOKIE_NAME, newAccessToken, getCookieOptions(c, ACCESS_TOKEN_MAX_AGE))
@@ -186,7 +218,7 @@ auth.post('/refresh', async (c) => {
 
   return c.json({
     success: true,
-    user: { id: user.id, email: user.email },
+    user: { id: user.id, email: user.email, is_admin: Boolean(user.is_admin) },
   })
 })
 

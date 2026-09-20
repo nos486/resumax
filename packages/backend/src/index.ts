@@ -4,6 +4,7 @@ import { Bindings, Variables } from './types'
 import auth from './routes/auth'
 import resume from './routes/resume'
 import publicRoute from './routes/public'
+import admin from './routes/admin'
 import { openApiSpec } from './openapi'
 
 const app = new Hono<{ Bindings: Bindings; Variables: Variables }>()
@@ -28,6 +29,7 @@ app.onError((err, c) => {
 app.route('/api/auth', auth)
 app.route('/api/resume', resume)
 app.route('/api/public', publicRoute)
+app.route('/api/admin', admin)
 
 app.get('/api/openapi.json', (c) => {
   return c.json(openApiSpec)

@@ -30,6 +30,7 @@ describe('Resumax Backend Route Suite', () => {
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           email TEXT NOT NULL UNIQUE,
           google_id TEXT UNIQUE,
+          is_admin INTEGER NOT NULL DEFAULT 0,
           created_at INTEGER DEFAULT (unixepoch())
       )`,
       `CREATE TABLE resumes (
@@ -93,7 +94,7 @@ describe('Resumax Backend Route Suite', () => {
         .bind('john@example.com')
         .first()
 
-      const token = await issueAccessToken({ id: user.id, email: user.email }, JWT_SECRET)
+      const token = await issueAccessToken({ id: user.id, email: user.email, is_admin: false }, JWT_SECRET)
 
       const res = await app.request(
         '/api/auth/me',
@@ -190,7 +191,7 @@ describe('Resumax Backend Route Suite', () => {
         .bind('john@example.com')
         .first()
       userId = user.id
-      const token = await issueAccessToken({ id: user.id, email: user.email }, JWT_SECRET)
+      const token = await issueAccessToken({ id: user.id, email: user.email, is_admin: false }, JWT_SECRET)
       authCookie = `${ACCESS_COOKIE_NAME}=${token}`
     })
 
@@ -278,7 +279,7 @@ describe('Resumax Backend Route Suite', () => {
         .bind('alice@example.com', 'google-456')
         .run()
       const alice = await db.prepare('SELECT * FROM users WHERE email = ?').bind('alice@example.com').first()
-      const aliceToken = await issueAccessToken({ id: alice.id, email: alice.email }, JWT_SECRET)
+      const aliceToken = await issueAccessToken({ id: alice.id, email: alice.email, is_admin: false }, JWT_SECRET)
 
       const res = await app.request(
         '/api/resume',
@@ -337,6 +338,105 @@ describe('Resumax Backend Route Suite', () => {
       }
 
       expect(lastStatus).toBe(429)
+    })
+  })
+
+  // ─── 4. Admin API Suite ───────────────────────────────────────────────────
+  describe('Admin API Suite', () => {
+    let adminToken: string
+    let nonAdminToken: string
+
+    beforeAll(async () => {
+      // Seed admin user
+      await db.prepare('INSERT INTO users (email, google_id, is_admin) VALUES (?, ?, ?)')
+        .bind('admin@example.com', 'google-admin', 1)
+        .run()
+      const adminUser = await db.prepare('SELECT * FROM users WHERE email = ?').bind('admin@example.com').first()
+      adminToken = await issueAccessToken(
+        { id: adminUser.id, email: adminUser.email, is_admin: true },
+        JWT_SECRET
+      )
+
+      // Seed standard user
+      const standardUser = await db.prepare('SELECT * FROM users WHERE email = ?').bind('john@example.com').first()
+      nonAdminToken = await issueAccessToken(
+        { id: standardUser.id, email: standardUser.email, is_admin: false },
+        JWT_SECRET
+      )
+    })
+
+    it('denies access to non-admin users with 403 Forbidden', async () => {
+      const res = await app.request(
+        '/api/admin/users',
+        {
+          method: 'GET',
+          headers: { Cookie: `${ACCESS_COOKIE_NAME}=${nonAdminToken}` },
+        },
+        getEnv()
+      )
+
+      expect(res.status).toBe(403)
+      const body = await res.json()
+      expect(body.code).toBe('FORBIDDEN')
+    })
+
+    it('allows admin user to list users with pagination and resume status', async () => {
+      const res = await app.request(
+        '/api/admin/users?page=1&limit=10',
+        {
+          method: 'GET',
+          headers: { Cookie: `${ACCESS_COOKIE_NAME}=${adminToken}` },
+        },
+        getEnv()
+      )
+
+      expect(res.status).toBe(200)
+      const body = await res.json()
+      expect(body.data).toBeDefined()
+      expect(Array.isArray(body.data)).toBe(true)
+      expect(body.total).toBeGreaterThanOrEqual(2)
+      expect(body.page).toBe(1)
+      expect(body.limit).toBe(10)
+
+      // Check row shape
+      const userRow = body.data.find((u: any) => u.email === 'john@example.com')
+      expect(userRow).toBeDefined()
+      expect(userRow.resume_slug).toBe('john-doe')
+      expect(userRow.is_admin).toBe(false)
+    })
+
+    it('allows admin to fetch full user detail and CV content at /api/admin/users/:id', async () => {
+      const john = await db.prepare('SELECT id FROM users WHERE email = ?').bind('john@example.com').first()
+
+      const res = await app.request(
+        `/api/admin/users/${john.id}`,
+        {
+          method: 'GET',
+          headers: { Cookie: `${ACCESS_COOKIE_NAME}=${adminToken}` },
+        },
+        getEnv()
+      )
+
+      expect(res.status).toBe(200)
+      const body = await res.json()
+      expect(body.user).toBeDefined()
+      expect(body.user.email).toBe('john@example.com')
+      expect(body.user.resume_slug).toBe('john-doe')
+      expect(body.user.resume_content).toBeDefined()
+      expect(body.user.resume_content.personalInfo.name).toBe('John Doe')
+    })
+
+    it('returns 404 when fetching a non-existent user ID', async () => {
+      const res = await app.request(
+        '/api/admin/users/99999',
+        {
+          method: 'GET',
+          headers: { Cookie: `${ACCESS_COOKIE_NAME}=${adminToken}` },
+        },
+        getEnv()
+      )
+
+      expect(res.status).toBe(404)
     })
   })
 })

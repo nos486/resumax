@@ -26,8 +26,12 @@ export const authMiddleware = createMiddleware<{ Bindings: Bindings; Variables: 
         }
 
         try {
-            const payload = await verify(token, c.env.JWT_SECRET, 'HS256') as { id: number; email: string }
-            c.set('user', { id: payload.id, email: payload.email })
+            const payload = await verify(token, c.env.JWT_SECRET, 'HS256') as { id: number; email: string; is_admin?: boolean }
+            c.set('user', {
+                id: payload.id,
+                email: payload.email,
+                is_admin: Boolean(payload.is_admin),
+            })
             await next()
         } catch (e: any) {
             return c.json({
@@ -36,5 +40,15 @@ export const authMiddleware = createMiddleware<{ Bindings: Bindings; Variables: 
                 details: e.message,
             }, 401)
         }
+    }
+)
+
+export const adminOnly = createMiddleware<{ Bindings: Bindings; Variables: Variables }>(
+    async (c, next) => {
+        const user = c.get('user')
+        if (!user || !user.is_admin) {
+            return c.json({ error: 'Forbidden: Admin privileges required', code: 'FORBIDDEN' }, 403)
+        }
+        await next()
     }
 )

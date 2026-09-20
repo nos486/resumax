@@ -149,6 +149,36 @@ export const openApiSpec = {
         },
       },
     },
+    '/admin/users': {
+      get: {
+        summary: 'List users with resume status (Admin only)',
+        security: [{ cookieAuth: [] }],
+        parameters: [
+          { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
+          { name: 'limit', in: 'query', schema: { type: 'integer', default: 25 } },
+        ],
+        responses: {
+          '200': { description: 'Paginated user list' },
+          '401': { description: 'Unauthorized' },
+          '403': { description: 'Forbidden: Admin access required' },
+        },
+      },
+    },
+    '/admin/users/{id}': {
+      get: {
+        summary: 'Get user detail with full resume (Admin only)',
+        security: [{ cookieAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'integer' } },
+        ],
+        responses: {
+          '200': { description: 'User detail and resume content' },
+          '401': { description: 'Unauthorized' },
+          '403': { description: 'Forbidden: Admin access required' },
+          '404': { description: 'User not found' },
+        },
+      },
+    },
   },
   components: {
     securitySchemes: {

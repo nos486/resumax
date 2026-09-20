@@ -8,6 +8,7 @@ export type Bindings = {
     GOOGLE_CLIENT_SECRET: string
     FRONTEND_URL: string
     COOKIE_DOMAIN?: string
+    ADMIN_EMAILS?: string
 }
 
 export type Variables = {

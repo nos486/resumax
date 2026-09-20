@@ -38,6 +38,7 @@ export async function issueAccessToken(user: AuthUser, jwtSecret: string): Promi
     {
       id: user.id,
       email: user.email,
+      is_admin: Boolean(user.is_admin),
       exp: Math.floor(Date.now() / 1000) + ACCESS_TOKEN_MAX_AGE,
     },
     jwtSecret

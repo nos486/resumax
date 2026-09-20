@@ -180,6 +180,29 @@ export interface PublicResumeResponse {
 export interface AuthUser {
   id: number
   email: string
+  is_admin: boolean
+}
+
+export interface AdminUserListItem {
+  id: number
+  email: string
+  created_at: number
+  is_admin: boolean
+  resume_slug: string | null
+  resume_theme: string | null
+  resume_updated_at: number | null
+}
+
+export interface AdminUserDetail extends AdminUserListItem {
+  resume_content: ResumeContent | null
+}
+
+export interface PaginatedResponse<T> {
+  data: T[]
+  page: number
+  limit: number
+  total: number
+  totalPages: number
 }
 
 /**
