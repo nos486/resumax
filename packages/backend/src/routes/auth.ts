@@ -195,6 +195,18 @@ auth.post('/refresh', async (c) => {
     return c.json({ error: 'User not found', code: 'USER_NOT_FOUND' }, 401)
   }
 
+  // Auto-sync admin role if user email matches configured ADMIN_EMAILS
+  const shouldBeAdmin = isConfiguredAdmin(user.email, c.env.ADMIN_EMAILS)
+  let isAdmin = Boolean(user.is_admin)
+  if (shouldBeAdmin && !user.is_admin) {
+    try {
+      await c.env.DB.prepare('UPDATE users SET is_admin = 1 WHERE id = ?').bind(user.id).run()
+      isAdmin = true
+    } catch (e) {
+      console.error('Error promoting user to admin in /refresh:', e)
+    }
+  }
+
   // Token rotation: generate new refresh token and invalidate old one
   const newRefreshToken = generateSecureToken()
   const newHashedToken = await hashToken(newRefreshToken)
@@ -208,7 +220,7 @@ auth.post('/refresh', async (c) => {
 
   // Issue new access token with is_admin
   const newAccessToken = await issueAccessToken(
-    { id: user.id, email: user.email, is_admin: Boolean(user.is_admin) },
+    { id: user.id, email: user.email, is_admin: isAdmin },
     c.env.JWT_SECRET
   )
 
@@ -218,7 +230,7 @@ auth.post('/refresh', async (c) => {
 
   return c.json({
     success: true,
-    user: { id: user.id, email: user.email, is_admin: Boolean(user.is_admin) },
+    user: { id: user.id, email: user.email, is_admin: isAdmin },
   })
 })
 
@@ -248,6 +260,18 @@ auth.post('/logout', async (c) => {
 
 auth.get('/me', authMiddleware, async (c) => {
   const user = c.get('user')
+  const shouldBeAdmin = isConfiguredAdmin(user.email, c.env.ADMIN_EMAILS)
+
+  // Auto-sync admin role in database and session on /me call
+  if (shouldBeAdmin && !user.is_admin) {
+    try {
+      await c.env.DB.prepare('UPDATE users SET is_admin = 1 WHERE id = ?').bind(user.id).run()
+      user.is_admin = true
+    } catch (e) {
+      console.error('Error promoting user to admin in /me:', e)
+    }
+  }
+
   return c.json({ user })
 })
 
