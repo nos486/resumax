@@ -5,7 +5,7 @@ import { api } from '../lib/api'
 import { toast } from '../lib/toast'
 import IconPicker from '../components/IconPicker.vue'
 import ThemeCustomizer from '../components/ThemeCustomizer.vue'
-import DynamicTheme from '../components/themes/DynamicTheme.vue'
+import CVRenderer from '../components/CVRenderer.vue'
 import { 
   Settings, 
   Palette, 
@@ -18,6 +18,7 @@ import {
   LogOut, 
   Save, 
   Eye, 
+  Shield, 
   ChevronDown,
   ExternalLink,
   ChevronLeft,
@@ -33,6 +34,7 @@ import {
 
 const router = useRouter()
 const loading = ref(true)
+const currentUser = ref(null)
 const activeTab = ref('editor') // 'editor' or 'preview'
 const activeSection = ref('personal')
 const saving = ref(false)
@@ -111,6 +113,12 @@ const resume = reactive({
 
 onMounted(async () => {
   try {
+    currentUser.value = JSON.parse(localStorage.getItem('user') || '{}')
+    api.getMe().then(({ user }) => {
+      currentUser.value = user
+      localStorage.setItem('user', JSON.stringify(user))
+    }).catch(() => {})
+
     const data = await api.getResume()
     if (data) {
       resume.slug = data.slug || ''
@@ -310,7 +318,17 @@ function importData(event) {
         <button @click="activeTab = 'preview'" :class="activeTab === 'preview' ? 'bg-gray-700 text-white' : 'text-gray-400'" class="px-4 py-1.5 rounded-md text-sm font-medium transition">Preview</button>
       </div>
 
-      <div class="flex items-center gap-4">
+      <div class="flex items-center gap-3">
+        <router-link
+          v-if="currentUser?.is_admin"
+          to="/admin"
+          class="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/40 text-purple-300 hover:text-purple-200 text-xs font-semibold rounded-full transition shadow"
+          title="Admin Panel"
+        >
+          <Shield class="w-3.5 h-3.5 text-purple-400" />
+          <span>Admin</span>
+        </router-link>
+
         <a v-if="resume.slug" :href="`/v/${resume.slug}`" target="_blank" class="p-2 text-gray-400 hover:text-white transition rounded-full hover:bg-gray-800" title="View Public Page">
           <ExternalLink class="w-5 h-5" />
         </a>
@@ -580,7 +598,7 @@ function importData(event) {
         <div class="flex-1 overflow-y-auto custom-scrollbar transition-all duration-500 flex justify-center items-start p-8 pb-32" :style="{ backgroundColor: resume.content?.themeConfig?.colors?.background || '#f3f4f6' }">
           <div class="w-full max-w-5xl transition-all">
              <div class="custom-scrollbar bg-white">
-                <DynamicTheme :resume="resume" class="pointer-events-none" />
+                <CVRenderer :content="resume.content" :theme="resume.theme" :slug="resume.slug" class="pointer-events-none" />
              </div>
           </div>
         </div>

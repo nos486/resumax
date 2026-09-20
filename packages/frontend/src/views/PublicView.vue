@@ -3,7 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { api } from '../lib/api'
 import { sanitizeResumeContent, PublicResumeResponse } from '@resumax/shared'
-import DynamicTheme from '../components/themes/DynamicTheme.vue'
+import CVRenderer from '../components/CVRenderer.vue'
 
 const route = useRoute()
 const loading = ref(true)
@@ -14,7 +14,6 @@ onMounted(async () => {
   try {
     const slug = route.params.slug as string
     const data = await api.getPublicResume(slug)
-    // Deep sanitize resume content before rendering to eliminate XSS/malicious protocols
     resume.value = {
       ...data,
       content: sanitizeResumeContent(data.content),
@@ -38,7 +37,7 @@ onMounted(async () => {
 
   <div v-else-if="resume" class="min-h-screen md:py-12 md:px-4" :style="{ backgroundColor: resume.content?.themeConfig?.colors?.background || '#f3f4f6' }">
     <div class="md:max-w-5xl md:mx-auto overflow-hidden">
-      <DynamicTheme :resume="resume" />
+      <CVRenderer :content="resume.content" :theme="resume.theme" :slug="resume.slug" />
     </div>
   </div>
 </template>

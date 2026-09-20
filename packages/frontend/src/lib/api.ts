@@ -3,6 +3,9 @@ import {
   UpdateResumeInput,
   PublicResumeResponse,
   AuthUser,
+  AdminUserListItem,
+  AdminUserDetail,
+  PaginatedResponse,
 } from '@resumax/shared'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8787/api'
@@ -124,5 +127,19 @@ export const api = {
    */
   getPublicResume(slug: string): Promise<PublicResumeResponse> {
     return request<PublicResumeResponse>(`/public/${slug}`)
+  },
+
+  /**
+   * Fetches paginated user list with resume status (Admin only).
+   */
+  getAdminUsers(page = 1, limit = 25): Promise<PaginatedResponse<AdminUserListItem>> {
+    return request<PaginatedResponse<AdminUserListItem>>(`/admin/users?page=${page}&limit=${limit}`)
+  },
+
+  /**
+   * Fetches full user details and resume content for CV preview (Admin only).
+   */
+  getAdminUser(id: number): Promise<{ user: AdminUserDetail }> {
+    return request<{ user: AdminUserDetail }>(`/admin/users/${id}`)
   },
 }
