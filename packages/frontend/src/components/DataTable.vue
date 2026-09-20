@@ -3,6 +3,7 @@ export interface Column {
   key: string
   label: string
   align?: 'left' | 'center' | 'right'
+  sortable?: boolean
   formatter?: (value: any, row: any) => string | number
 }
 
@@ -14,6 +15,8 @@ interface Props {
   page?: number
   totalPages?: number
   total?: number
+  sortBy?: string
+  sortOrder?: 'asc' | 'desc'
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -22,10 +25,13 @@ const props = withDefaults(defineProps<Props>(), {
   page: 1,
   totalPages: 1,
   total: 0,
+  sortBy: '',
+  sortOrder: 'desc',
 })
 
 const emit = defineEmits<{
   (e: 'page-change', newPage: number): void
+  (e: 'sort', key: string): void
 }>()
 
 function onPrev() {
@@ -51,11 +57,43 @@ function onNext() {
               v-for="col in columns"
               :key="col.key"
               :class="[
-                'py-3.5 px-4',
-                col.align === 'center' ? 'text-center' : col.align === 'right' ? 'text-right' : 'text-left'
+                'py-3.5 px-4 select-none',
+                col.align === 'center' ? 'text-center' : col.align === 'right' ? 'text-right' : 'text-left',
+                col.sortable ? 'cursor-pointer hover:text-white transition group' : ''
               ]"
+              @click="col.sortable && emit('sort', col.key)"
             >
-              {{ col.label }}
+              <div :class="['inline-flex items-center gap-1.5', col.align === 'right' ? 'justify-end' : col.align === 'center' ? 'justify-center' : '']">
+                <span>{{ col.label }}</span>
+                <span v-if="col.sortable" class="inline-flex items-center">
+                  <svg
+                    v-if="sortBy === col.key"
+                    class="w-3.5 h-3.5 text-blue-400"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path v-if="sortOrder === 'asc'" d="m18 15-6-6-6 6" />
+                    <path v-else d="m6 9 6 6 6-6" />
+                  </svg>
+                  <svg
+                    v-else
+                    class="w-3.5 h-3.5 text-gray-500 opacity-40 group-hover:opacity-90 transition"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="m7 15 5 5 5-5" />
+                    <path d="m7 9 5-5 5 5" />
+                  </svg>
+                </span>
+              </div>
             </th>
           </tr>
         </thead>

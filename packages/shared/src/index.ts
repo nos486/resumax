@@ -191,6 +191,7 @@ export interface AdminUserListItem {
   resume_slug: string | null
   resume_theme: string | null
   resume_updated_at: number | null
+  resume_size: number
 }
 
 export interface AdminUserDetail extends AdminUserListItem {

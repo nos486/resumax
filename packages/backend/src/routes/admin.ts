@@ -15,10 +15,13 @@ const admin = new Hono<{ Bindings: Bindings; Variables: Variables }>()
 admin.use('*', authMiddleware, adminOnly)
 
 // ─── GET /api/admin/users ───────────────────────────────────────────────────
-// Returns paginated list of all users with their resume status (LEFT JOIN)
+// ─── GET /api/admin/users ───────────────────────────────────────────────────
+// Returns paginated list of all users with their resume status and size, sorted by updated_at, size, or created_at
 admin.get('/users', async (c) => {
   const pageQuery = parseInt(c.req.query('page') || '1', 10)
   const limitQuery = parseInt(c.req.query('limit') || '25', 10)
+  const sortByQuery = (c.req.query('sortBy') || c.req.query('sort') || 'resume_updated_at').toLowerCase()
+  const orderQuery = (c.req.query('order') || 'desc').toLowerCase() === 'asc' ? 'ASC' : 'DESC'
 
   const page = isNaN(pageQuery) || pageQuery < 1 ? 1 : pageQuery
   const limit = isNaN(limitQuery) || limitQuery < 1 || limitQuery > 100 ? 25 : limitQuery
@@ -29,8 +32,18 @@ admin.get('/users', async (c) => {
   const total = totalResult?.count || 0
   const totalPages = Math.ceil(total / limit)
 
-  // Fetch users with resume summary info
-  const records = await c.env.DB.prepare(`
+  // Construct safe ORDER BY clause based on whitelist
+  let orderByClause = 'ORDER BY (CASE WHEN r.updated_at IS NULL THEN 1 ELSE 0 END), r.updated_at DESC, u.created_at DESC'
+  if (sortByQuery === 'resume_size' || sortByQuery === 'size') {
+    orderByClause = `ORDER BY resume_size ${orderQuery}, u.id ${orderQuery}`
+  } else if (sortByQuery === 'resume_updated_at' || sortByQuery === 'updated_at') {
+    orderByClause = `ORDER BY (CASE WHEN r.updated_at IS NULL THEN 1 ELSE 0 END), r.updated_at ${orderQuery}, u.created_at ${orderQuery}`
+  } else if (sortByQuery === 'created_at') {
+    orderByClause = `ORDER BY u.created_at ${orderQuery}, u.id ${orderQuery}`
+  }
+
+  // Fetch users with resume summary info and CV size
+  const query = `
     SELECT 
       u.id, 
       u.email, 
@@ -38,12 +51,15 @@ admin.get('/users', async (c) => {
       u.is_admin,
       r.slug as resume_slug,
       r.theme as resume_theme,
-      r.updated_at as resume_updated_at
+      r.updated_at as resume_updated_at,
+      COALESCE(LENGTH(r.content), 0) as resume_size
     FROM users u
     LEFT JOIN resumes r ON u.id = r.user_id
-    ORDER BY u.created_at DESC
+    ${orderByClause}
     LIMIT ? OFFSET ?
-  `)
+  `
+
+  const records = await c.env.DB.prepare(query)
     .bind(limit, offset)
     .all<{
       id: number
@@ -53,6 +69,7 @@ admin.get('/users', async (c) => {
       resume_slug: string | null
       resume_theme: string | null
       resume_updated_at: number | null
+      resume_size: number
     }>()
 
   const data: AdminUserListItem[] = (records.results || []).map((row) => ({
@@ -63,6 +80,7 @@ admin.get('/users', async (c) => {
     resume_slug: row.resume_slug,
     resume_theme: row.resume_theme,
     resume_updated_at: row.resume_updated_at,
+    resume_size: row.resume_size || 0,
   }))
 
   const response: PaginatedResponse<AdminUserListItem> = {
@@ -94,6 +112,7 @@ admin.get('/users/:id', async (c) => {
       r.slug as resume_slug,
       r.theme as resume_theme,
       r.updated_at as resume_updated_at,
+      COALESCE(LENGTH(r.content), 0) as resume_size,
       r.content as resume_content
     FROM users u
     LEFT JOIN resumes r ON u.id = r.user_id
@@ -108,6 +127,7 @@ admin.get('/users/:id', async (c) => {
       resume_slug: string | null
       resume_theme: string | null
       resume_updated_at: number | null
+      resume_size: number
       resume_content: string | null
     }>()
 
@@ -133,6 +153,7 @@ admin.get('/users/:id', async (c) => {
     resume_slug: row.resume_slug,
     resume_theme: row.resume_theme,
     resume_updated_at: row.resume_updated_at,
+    resume_size: row.resume_size || 0,
     resume_content: resumeContent,
   }
 

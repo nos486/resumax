@@ -403,6 +403,68 @@ describe('Resumax Backend Route Suite', () => {
       expect(userRow).toBeDefined()
       expect(userRow.resume_slug).toBe('john-doe')
       expect(userRow.is_admin).toBe(false)
+      expect(userRow.resume_size).toBeGreaterThan(0)
+    })
+
+    it('sorts users by resume size (descending and ascending)', async () => {
+      // Create a user with a much larger CV
+      const largeContent = JSON.stringify({
+        personalInfo: { name: 'Large CV User', bio: 'A'.repeat(5000) },
+        experience: [],
+        education: [],
+        certifications: [],
+        skills: [],
+        customSections: [],
+      })
+      await db.prepare('INSERT INTO users (email, google_id) VALUES (?, ?)')
+        .bind('large@example.com', 'google-large')
+        .run()
+      const largeUser = await db.prepare('SELECT id FROM users WHERE email = ?').bind('large@example.com').first()
+      await db.prepare('INSERT INTO resumes (user_id, slug, content, theme, updated_at) VALUES (?, ?, ?, ?, ?)')
+        .bind(largeUser.id, 'large-cv', largeContent, 'modern', 1700000000)
+        .run()
+
+      // Sort by size desc
+      const resDesc = await app.request(
+        '/api/admin/users?sortBy=resume_size&order=desc',
+        {
+          method: 'GET',
+          headers: { Cookie: `${ACCESS_COOKIE_NAME}=${adminToken}` },
+        },
+        getEnv()
+      )
+      expect(resDesc.status).toBe(200)
+      const bodyDesc = await resDesc.json()
+      expect(bodyDesc.data[0].email).toBe('large@example.com')
+      expect(bodyDesc.data[0].resume_size).toBeGreaterThan(5000)
+
+      // Sort by size asc
+      const resAsc = await app.request(
+        '/api/admin/users?sortBy=resume_size&order=asc',
+        {
+          method: 'GET',
+          headers: { Cookie: `${ACCESS_COOKIE_NAME}=${adminToken}` },
+        },
+        getEnv()
+      )
+      expect(resAsc.status).toBe(200)
+      const bodyAsc = await resAsc.json()
+      // Admin user has no resume, so resume_size should be 0
+      expect(bodyAsc.data[0].resume_size).toBe(0)
+    })
+
+    it('sorts users by resume updated_at', async () => {
+      const res = await app.request(
+        '/api/admin/users?sortBy=resume_updated_at&order=desc',
+        {
+          method: 'GET',
+          headers: { Cookie: `${ACCESS_COOKIE_NAME}=${adminToken}` },
+        },
+        getEnv()
+      )
+      expect(res.status).toBe(200)
+      const body = await res.json()
+      expect(body.data[0].resume_updated_at).toBeGreaterThanOrEqual(body.data[1]?.resume_updated_at || 0)
     })
 
     it('allows admin to fetch full user detail and CV content at /api/admin/users/:id', async () => {
@@ -422,6 +484,7 @@ describe('Resumax Backend Route Suite', () => {
       expect(body.user).toBeDefined()
       expect(body.user.email).toBe('john@example.com')
       expect(body.user.resume_slug).toBe('john-doe')
+      expect(body.user.resume_size).toBeGreaterThan(0)
       expect(body.user.resume_content).toBeDefined()
       expect(body.user.resume_content.personalInfo.name).toBe('John Doe')
     })

@@ -130,10 +130,21 @@ export const api = {
   },
 
   /**
-   * Fetches paginated user list with resume status (Admin only).
+   * Fetches paginated user list with resume status and size (Admin only).
    */
-  getAdminUsers(page = 1, limit = 25): Promise<PaginatedResponse<AdminUserListItem>> {
-    return request<PaginatedResponse<AdminUserListItem>>(`/admin/users?page=${page}&limit=${limit}`)
+  getAdminUsers(
+    page = 1,
+    limit = 25,
+    sortBy = 'resume_updated_at',
+    order: 'asc' | 'desc' = 'desc'
+  ): Promise<PaginatedResponse<AdminUserListItem>> {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      sortBy,
+      order,
+    })
+    return request<PaginatedResponse<AdminUserListItem>>(`/admin/users?${params.toString()}`)
   },
 
   /**
