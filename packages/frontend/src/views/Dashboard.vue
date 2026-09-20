@@ -170,8 +170,12 @@ async function saveResume() {
   }
 }
 
-function handleLogout() {
-  localStorage.removeItem('token')
+async function handleLogout() {
+  try {
+    await api.logout()
+  } catch (e) {
+    console.error('Logout error:', e)
+  }
   localStorage.removeItem('user')
   router.push('/login')
   toast.info('Logged out')

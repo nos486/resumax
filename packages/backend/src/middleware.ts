@@ -1,34 +1,39 @@
 import { createMiddleware } from 'hono/factory'
 import { verify } from 'hono/jwt'
+import { getCookie } from 'hono/cookie'
 import { Bindings, Variables } from './types'
+import { ACCESS_COOKIE_NAME } from './auth-utils'
 
 export const authMiddleware = createMiddleware<{ Bindings: Bindings; Variables: Variables }>(
     async (c, next) => {
-        const authHeader = c.req.header('Authorization')
-        if (!authHeader) {
-            return c.json({ error: 'Unauthorized' }, 401)
+        let token = getCookie(c, ACCESS_COOKIE_NAME)
+
+        // Fallback to Authorization: Bearer <token> for CLI/test tooling
+        if (!token) {
+            const authHeader = c.req.header('Authorization')
+            if (authHeader && authHeader.startsWith('Bearer ')) {
+                token = authHeader.slice(7)
+            }
         }
 
-        const token = authHeader.split(' ')[1]
         if (!token) {
-            return c.json({ error: 'Unauthorized' }, 401)
+            return c.json({ error: 'Unauthorized: No session token provided', code: 'UNAUTHORIZED' }, 401)
         }
 
         if (!c.env.JWT_SECRET) {
-            console.error('SERVER ERROR: JWT_SECRET is not set in middleware')
+            console.error('SERVER ERROR: JWT_SECRET is not configured')
             return c.json({ error: 'Server configuration error' }, 500)
         }
 
         try {
-            const payload = await verify(token, c.env.JWT_SECRET, 'HS256')
-            c.set('user', payload as unknown as Variables['user']) // Type assertion
+            const payload = await verify(token, c.env.JWT_SECRET, 'HS256') as { id: number; email: string }
+            c.set('user', { id: payload.id, email: payload.email })
             await next()
         } catch (e: any) {
-            console.error('Token verification failed:', e)
             return c.json({
-                error: 'Unauthorized',
+                error: 'Unauthorized: Session expired or invalid',
+                code: 'TOKEN_EXPIRED',
                 details: e.message,
-                name: e.name
             }, 401)
         }
     }
