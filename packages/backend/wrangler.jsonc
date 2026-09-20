@@ -29,6 +29,7 @@
     }
   ],
   "vars": {
+    "ADMIN_EMAILS": "nos486@gmail.com",
     "FRONTEND_URL": "https://resumax.ir"
   }
   // "ai": {
