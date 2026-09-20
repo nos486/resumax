@@ -2,8 +2,6 @@
 import { computed } from 'vue'
 import { ResumeContent, sanitizeResumeContent } from '@resumax/shared'
 import DynamicTheme from './themes/DynamicTheme.vue'
-import ModernTheme from './themes/ModernTheme.vue'
-import ProfessionalTheme from './themes/ProfessionalTheme.vue'
 
 interface Props {
   content?: ResumeContent | null
@@ -12,21 +10,20 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  theme: 'modern',
+  theme: 'dynamic',
   slug: '',
 })
 
 const normalizedResume = computed(() => ({
   content: sanitizeResumeContent(props.content || {}),
-  theme: props.theme || 'modern',
+  theme: props.theme || 'dynamic',
   slug: props.slug || '',
 }))
 </script>
 
 <template>
   <div class="cv-renderer w-full">
-    <ModernTheme v-if="theme === 'modern'" :resume="normalizedResume" />
-    <ProfessionalTheme v-else-if="theme === 'professional'" :resume="normalizedResume" />
-    <DynamicTheme v-else :resume="normalizedResume" />
+    <!-- DynamicTheme is the platform's multi-layout, multi-column, and preset engine -->
+    <DynamicTheme :resume="normalizedResume" />
   </div>
 </template>
